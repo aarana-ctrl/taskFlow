@@ -61,11 +61,11 @@ a { color: inherit; text-decoration: none; }
 @keyframes spin      { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
 @keyframes popIn     { 0%{transform:scale(.95);opacity:0} 100%{transform:scale(1);opacity:1} }
 
-.a-fade  { animation: fadeIn .18s ease both }
-.a-up    { animation: slideUp .22s ease both }
-.a-sheet { animation: sheetUp .32s cubic-bezier(.32,1,.28,1) both }
-.a-right { animation: slideRight .25s ease both }
-.a-pop   { animation: popIn .18s ease both }
+.a-fade  { animation: fadeIn .25s ease both }
+.a-up    { animation: slideUp .35s cubic-bezier(0.16,1,0.3,1) both }
+.a-sheet { animation: sheetUp .35s cubic-bezier(.32,1,.28,1) both }
+.a-right { animation: slideRight .3s ease both }
+.a-pop   { animation: popIn .3s cubic-bezier(.175,.885,.32,1.275) both }
 .spinning{ animation: spin .9s linear infinite }
 
 /* ── Layout ── */
@@ -97,6 +97,9 @@ a { color: inherit; text-decoration: none; }
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+}
+.view-content {
+  padding: 24px 32px;
 }
 .detail-col {
   width: 340px;
@@ -145,7 +148,7 @@ a { color: inherit; text-decoration: none; }
   .bottom-nav { display: flex; }
   .bottom-sheet-overlay { display: block; }
   .bottom-sheet { display: block; }
-  .main-scroll { padding-bottom: calc(var(--nav-h) + 16px); }
+  .view-content { padding: 24px 20px calc(var(--nav-h) + 120px) 20px !important; }
   .fab { display: flex !important; }
   .desktop-add { display: none !important; }
 }
@@ -171,18 +174,24 @@ a { color: inherit; text-decoration: none; }
 .task-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 16px;
+  padding: 18px 20px;
   background: var(--card);
-  border-radius: var(--r);
+  border-radius: 20px;
   box-shadow: var(--sh);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   cursor: pointer;
-  transition: box-shadow .15s, transform .1s;
+  transition: all .35s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
 }
-.task-item:active { transform: scale(.99); }
-.task-item.selected { box-shadow: 0 0 0 2px var(--blue), var(--sh); }
+.task-item.completed {
+  opacity: 0.55;
+  background: var(--bg);
+  transform: scale(0.99);
+  box-shadow: none;
+}
+.task-item:active { transform: scale(.98); }
+.task-item.selected { box-shadow: 0 0 0 2px var(--blue), var(--sh-lg); transform: translateY(-2px); z-index: 10; position: relative; }
 
 /* ── Chip ── */
 .chip {
@@ -805,18 +814,19 @@ function TaskItem({ task, onToggle, onSelect, selected }) {
 
   return (
     <div
-      className={'task-item a-up'+(selected?' selected':'')}
+      className={'task-item a-up'+(selected?' selected':'')+(task.completed?' completed':'')}
       onClick={function(){onSelect(task.id);}}
     >
       {/* Checkbox */}
       <div
         onClick={function(e){e.stopPropagation();onToggle(task.id,!task.completed);}}
         style={{
-          width:22,height:22,borderRadius:'50%',flexShrink:0,marginTop:1,
+          width:24,height:24,borderRadius:'50%',flexShrink:0,marginTop:1,
           border:'2.5px solid '+(task.completed?'var(--green)':cbClr),
           background:task.completed?'var(--green)':'transparent',
           display:'flex',alignItems:'center',justifyContent:'center',
-          cursor:'pointer',transition:'all .14s',color:'#fff',
+          cursor:'pointer',transition:'all .25s cubic-bezier(0.4,0,0.2,1)',color:'#fff',
+          transform:task.completed?'scale(1.1)':'scale(1)',
         }}
       >
         {task.completed && ICO.check}
@@ -826,10 +836,11 @@ function TaskItem({ task, onToggle, onSelect, selected }) {
       <div style={{flex:1,minWidth:0}}>
         <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
           <span style={{
-            fontSize:14,fontWeight:600,flex:1,minWidth:0,
+            fontSize:15,fontWeight:600,flex:1,minWidth:0,
             overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
             textDecoration:task.completed?'line-through':'none',
             color:task.completed?'var(--text3)':'var(--text)',
+            transition:'color .3s, text-decoration .3s',
           }}>
             {task.title}
           </span>
@@ -1540,20 +1551,6 @@ function Sidebar({ view, setView, tasks, integrations }) {
         </div>
       </button>
 
-      {/* Progress */}
-      <div style={{
-        marginTop:'auto',padding:'14px 12px',background:'var(--bg)',
-        borderRadius:14,
-      }}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:8}}>
-          <span style={{fontSize:11,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.7px'}}>Progress</span>
-          <span style={{fontSize:14,fontWeight:800,color:'var(--navy)'}}>{pct}%</span>
-        </div>
-        <div className="progress-bar">
-          <div className="progress-fill" style={{width:pct+'%'}} />
-        </div>
-        <p style={{fontSize:12,color:'var(--text3)',marginTop:8}}>{done} of {tasks.length} tasks done</p>
-      </div>
     </div>
   );
 }
@@ -1805,10 +1802,11 @@ function App() {
         </div>
 
         {/* Scrollable content */}
-        <div className="main-scroll" style={{padding:'16px 24px'}}>
-          {view!=='integrations' && (
-            <SmartInput onAdd={handleAdd} />
-          )}
+        <div className="main-scroll view-content">
+          <div key={view} className="a-fade" style={{display:'flex',flexDirection:'column',gap:8,minHeight:'100%'}}>
+            {view!=='integrations' && (
+              <SmartInput onAdd={handleAdd} />
+            )}
 
           {view==='integrations' ? (
             <IntegrationsPage
@@ -1847,6 +1845,7 @@ function App() {
               );
             })
           )}
+          </div>
         </div>
       </div>
 

@@ -1,0 +1,2813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ECEEF1">
+<title>TaskFlow</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.4/babel.min.js" crossorigin="anonymous"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root {
+  --bg:    #EAEAEB;
+  --card:  #FFFFFF;
+  --navy:  #0D1117;
+  --text:  #1A1D23;
+  --text2: #6B7280;
+  --text3: #9CA3AF;
+  --green: #22C55E;
+  --green-l: #DCFCE7;
+  --red:   #EF4444;
+  --red-l: #FEE2E2;
+  --amber: #F59E0B;
+  --amber-l: #FEF3C7;
+  --blue:  #6366F1;
+  --blue-l:#EEF2FF;
+  --border:rgba(0,0,0,.055);
+  --r:     16px;
+  --r-sm:  10px;
+  --r-pill:40px;
+  --sh:    0 1px 3px rgba(0,0,0,.07), 0 4px 16px rgba(0,0,0,.05);
+  --sh-lg: 0 8px 40px rgba(0,0,0,.13), 0 2px 8px rgba(0,0,0,.06);
+  --nav-h: 0px;
+  --hdr-h: 0px;
+}
+html { height:100%; }
+body {
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  height:100%;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;
+}
+#root { position:fixed; inset:0; overflow:hidden; }
+input,textarea,select,button { font-family:inherit; }
+input,textarea { border:none; outline:none; background:transparent; color:inherit; }
+input::placeholder,textarea::placeholder { color:var(--text3); }
+button { cursor:pointer; border:none; background:none; color:inherit; }
+::-webkit-scrollbar { width:0; height:0; }
+a { color:inherit; text-decoration:none; }
+
+/* ══ ANIMATIONS ══════════════════════════════════════════════ */
+@keyframes fadeIn   { from{opacity:0}                        to{opacity:1} }
+@keyframes viewIn   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slideUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes sheetUp  { from{transform:translateY(100%)}       to{transform:translateY(0)} }
+@keyframes slideRight{from{opacity:0;transform:translateX(24px)} to{opacity:1;transform:translateX(0)} }
+@keyframes spin     { to{transform:rotate(360deg)} }
+@keyframes popIn    { 0%{transform:scale(.9);opacity:0} 60%{transform:scale(1.04)} 100%{transform:scale(1);opacity:1} }
+@keyframes checkBounce { 0%{transform:scale(0.6)} 55%{transform:scale(1.25)} 75%{transform:scale(0.9)} 100%{transform:scale(1)} }
+@keyframes completeFade { from{opacity:1} to{opacity:.5} }
+@keyframes strikein { from{width:0} to{width:100%} }
+
+.a-fade   { animation:fadeIn .2s ease both }
+.a-view   { animation:viewIn .32s cubic-bezier(0.16,1,0.3,1) both }
+.a-up     { animation:slideUp .28s cubic-bezier(0.16,1,0.3,1) both }
+.a-sheet  { animation:sheetUp .36s cubic-bezier(.25,1,.3,1) both }
+.a-right  { animation:slideRight .28s cubic-bezier(0.16,1,0.3,1) both }
+.a-pop    { animation:popIn .35s cubic-bezier(.175,.885,.32,1.275) both }
+.spinning { animation:spin .8s linear infinite }
+
+/* ── stagger for list items ── */
+.a-up:nth-child(1)  { animation-delay:.02s }
+.a-up:nth-child(2)  { animation-delay:.05s }
+.a-up:nth-child(3)  { animation-delay:.08s }
+.a-up:nth-child(4)  { animation-delay:.11s }
+.a-up:nth-child(5)  { animation-delay:.14s }
+.a-up:nth-child(6)  { animation-delay:.17s }
+.a-up:nth-child(7)  { animation-delay:.2s  }
+.a-up:nth-child(n+8){ animation-delay:.22s }
+
+/* ══ DARK MODE ═══════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg:    #0C0E14;
+  --card:  #161921;
+  --navy:  #F8FAFC;
+  --text:  #E8ECF0;
+  --text2: #8B95A1;
+  --text3: #555E6A;
+  --border:rgba(255,255,255,.06);
+  --sh:    0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+  --sh-lg: 0 8px 40px rgba(0,0,0,.5), 0 2px 8px rgba(0,0,0,.3);
+  --green-l:rgba(34,197,94,.14);
+  --red-l:  rgba(239,68,68,.14);
+  --amber-l:rgba(245,158,11,.14);
+  --blue-l: rgba(99,102,241,.14);
+}
+[data-theme="dark"] input,
+[data-theme="dark"] textarea { color:var(--text); }
+[data-theme="dark"] .day-cell:hover { background:rgba(255,255,255,.05); }
+[data-theme="dark"] .cal-day:hover  { background:rgba(255,255,255,.04); }
+[data-theme="dark"] .chip-gray { background:rgba(255,255,255,.08); color:var(--text2); }
+[data-theme="dark"] .chip-gs  { background:rgba(15,118,110,.25);  color:#2DD4BF; }
+[data-theme="dark"] .chip-cv  { background:rgba(185,28,28,.22);   color:#FCA5A5; }
+
+/* ══ LAYOUT ══════════════════════════════════════════════════ */
+.app-shell {
+  position:fixed; inset:0;
+  display:flex; overflow:hidden;
+  background:var(--bg);
+}
+.sidebar {
+  width:248px; flex-shrink:0; height:100%;
+  background:var(--card);
+  border-right:1px solid var(--border);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+  padding:28px 14px 0;
+}
+.sidebar-nav { flex:1; overflow-y:auto; min-height:0; padding-bottom:8px; }
+.sidebar-bottom { flex-shrink:0; padding:10px 0 20px; }
+
+.main-col {
+  flex:1; display:flex; flex-direction:column;
+  overflow:hidden; min-width:0;
+}
+/* THE scroll fix: main-scroll is the overflow container — NO padding.
+   Padding lives on the inner .view-pad div so iOS Safari counts it in scrollHeight */
+.main-scroll {
+  flex:1;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+}
+.view-pad {
+  padding:20px 28px 48px;   /* desktop bottom breathing room */
+}
+
+.detail-col {
+  width:340px; flex-shrink:0; height:100%;
+  border-left:1px solid var(--border);
+  background:var(--card);
+  display:flex; flex-direction:column;
+  overflow-y:auto;
+}
+/* ══ MOBILE DRAWER ═══════════════════════════════════════════ */
+.mob-drawer-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.38); z-index:300;
+  backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+}
+.mob-drawer {
+  display:none; position:fixed;
+  top:0; left:0; bottom:0; width:min(280px, 82vw);
+  background:var(--card);
+  z-index:301; overflow-y:auto;
+  padding:calc(env(safe-area-inset-top) + 28px) 14px 32px;
+  box-shadow:4px 0 32px rgba(0,0,0,.18);
+  transform:translateX(-100%);
+  transition:transform .3s cubic-bezier(0.16,1,0.3,1);
+}
+.mob-drawer.open { transform:translateX(0); }
+.mob-drawer-overlay.open { display:block; }
+@keyframes overlayIn { from{opacity:0} to{opacity:1} }
+.mob-drawer-overlay.open { animation:overlayIn .22s ease both; }
+.bottom-sheet-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,.45); z-index:200;
+}
+.bottom-sheet {
+  display:none; position:fixed;
+  bottom:0; left:0; right:0;
+  background:var(--card);
+  border-radius:24px 24px 0 0;
+  max-height:88vh; z-index:210;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+
+/* ── Responsive ── */
+@media (max-width:768px) {
+  .sidebar     { display:none !important; }
+  .detail-col  { display:none !important; }
+  .mob-drawer  { display:block; }
+  .bottom-sheet-overlay { display:block; }
+  .bottom-sheet         { display:block; }
+  /* No bottom nav — just safe area + generous buffer */
+  .view-pad { padding:16px 18px calc(env(safe-area-inset-bottom) + 40px) 18px; }
+  .fab { display:flex !important; }
+  .desktop-add { display:none !important; }
+  .greeting { font-size:24px; letter-spacing:-.4px; }
+  .main-hdr { padding:calc(env(safe-area-inset-top) + 16px) 18px 0; }
+  .mob-menu-btn { display:flex !important; }
+}
+@media (min-width:769px) {
+  .bottom-sheet-overlay { display:none; }
+  .bottom-sheet { display:none; }
+  .fab { display:none !important; }
+}
+@media (min-width:769px) and (max-width:1100px) {
+  .sidebar { width:210px; }
+  .detail-col { width:300px; }
+  .view-pad { padding:20px 22px 48px; }
+}
+
+/* ══ TASK ITEM ═══════════════════════════════════════════════ */
+.task-item {
+  display:flex; align-items:flex-start; gap:14px;
+  padding:17px 20px;
+  background:var(--card);
+  border-radius:18px;
+  box-shadow:0 1px 2px rgba(0,0,0,.04), 0 4px 18px rgba(0,0,0,.05);
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:box-shadow .22s, transform .18s, opacity .35s, background .35s;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(0,0,0,.038);
+}
+[data-theme="dark"] .task-item { border-color:rgba(255,255,255,.05); }
+.task-item::before {
+  content:'';
+  position:absolute; inset:0;
+  opacity:0;
+  transition:opacity .15s;
+  background:rgba(0,0,0,.018);
+  pointer-events:none;
+}
+.task-item:hover { box-shadow:0 2px 20px rgba(0,0,0,.09),0 1px 4px rgba(0,0,0,.05); transform:translateY(-1px); }
+.task-item:hover::before { opacity:1; }
+.task-item:active { transform:scale(.984); box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.task-item.selected {
+  box-shadow:0 0 0 2px var(--blue), 0 8px 32px rgba(99,102,241,.13);
+  transform:translateY(-1px);
+  z-index:2; position:relative;
+}
+.task-item.completing {
+  animation:completeFade .4s cubic-bezier(0.4,0,0.2,1) forwards;
+}
+.task-item.task-done {
+  opacity:.42;
+  background:var(--bg);
+  box-shadow:none;
+  border-color:transparent;
+  transform:scale(.988);
+}
+
+/* ── Checkbox ── */
+.cb-wrap {
+  width:22px; height:22px; border-radius:50%; flex-shrink:0; margin-top:1px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .22s cubic-bezier(0.4,0,0.2,1);
+}
+.cb-wrap.checked { animation:checkBounce .38s cubic-bezier(0.175,.885,.32,1.275) both; }
+
+/* ══ CHIPS ════════════════════════════════════════════════════ */
+.chip {
+  display:inline-flex; align-items:center; gap:3px;
+  padding:2px 8px; border-radius:var(--r-pill);
+  font-size:10.5px; font-weight:600; flex-shrink:0;
+  letter-spacing:.1px;
+}
+.chip-green  { background:var(--green-l); color:var(--green); }
+.chip-red    { background:var(--red-l);   color:var(--red); }
+.chip-amber  { background:var(--amber-l); color:var(--amber); }
+.chip-blue   { background:var(--blue-l);  color:var(--blue); }
+.chip-gray   { background:#F3F4F6; color:var(--text2); }
+.chip-gs     { background:#CCFBF1; color:#0F766E; }  /* Gradescope — dark aqua */
+.chip-cw     { background:#EEF2FF; color:#4F46E5; }  /* Course web */
+.chip-cv     { background:#FEE2E2; color:#B91C1C; }  /* Canvas — red */
+
+/* ══ NAV BUTTONS ═════════════════════════════════════════════ */
+.nav-btn {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px;
+  border-radius:11px;
+  font-size:13.5px; font-weight:500;
+  color:var(--text2);
+  cursor:pointer; width:100%;
+  transition:background .15s, color .15s;
+  margin-bottom:1px;
+}
+.nav-btn:hover  { background:var(--bg); color:var(--text); }
+.nav-btn.active {
+  background:var(--navy); color:#fff;
+  font-weight:600;
+}
+[data-theme="dark"] .nav-btn.active { background:rgba(255,255,255,.1); color:var(--text); }
+
+/* ══ SECTION HEADER ══════════════════════════════════════════ */
+.section-hdr {
+  font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.8px;
+  color:var(--text3);
+  margin:18px 0 10px;
+  padding:0 4px;
+  display:flex; align-items:center; gap:8px;
+}
+.section-hdr:first-child { margin-top:0; }
+.section-hdr.overdue { color:var(--red); }
+.section-hdr.today   { color:var(--amber); }
+
+/* ══ BUTTONS ═════════════════════════════════════════════════ */
+.btn-green {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:15px 24px; border-radius:var(--r-pill);
+  background:var(--green); color:#fff;
+  font-size:15px; font-weight:700; width:100%;
+  cursor:pointer; transition:filter .15s, transform .1s;
+}
+.btn-green:hover  { filter:brightness(1.06); }
+.btn-green:active { filter:brightness(.95); transform:scale(.99); }
+.btn-navy {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  padding:12px 20px; border-radius:var(--r-pill);
+  background:var(--navy); color:#fff;
+  font-size:14px; font-weight:600; cursor:pointer;
+  transition:filter .15s;
+}
+
+/* ══ FAB ══════════════════════════════════════════════════════ */
+.fab {
+  position:fixed;
+  bottom:calc(env(safe-area-inset-bottom) + 22px);
+  right:20px;
+  width:54px; height:54px; border-radius:50%;
+  background:var(--navy); color:#fff;
+  display:none; align-items:center; justify-content:center;
+  box-shadow:0 4px 24px rgba(0,0,0,.22);
+  cursor:pointer; z-index:99;
+  transition:transform .15s, box-shadow .15s;
+}
+.fab:active { transform:scale(.9); }
+
+/* ══ PROGRESS ════════════════════════════════════════════════ */
+.progress-bar {
+  height:5px; background:rgba(0,0,0,.07);
+  border-radius:5px; overflow:hidden;
+}
+[data-theme="dark"] .progress-bar { background:rgba(255,255,255,.08); }
+.progress-fill {
+  height:100%; border-radius:5px;
+  background:linear-gradient(90deg,var(--green),#4ADE80);
+  transition:width .5s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ══ WEEK STRIP ═══════════════════════════════════════════════ */
+.week-strip {
+  display:flex; align-items:center;
+  overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;
+  gap:2px; padding:0 2px;
+}
+.week-strip::-webkit-scrollbar { display:none; }
+.day-cell {
+  display:flex; flex-direction:column; align-items:center;
+  gap:4px; padding:8px 9px;
+  border-radius:12px; cursor:pointer; flex-shrink:0;
+  transition:background .15s;
+  min-width:44px;
+}
+.day-cell:hover { background:rgba(0,0,0,.04); }
+.day-cell.today { background:var(--navy); }
+.day-cell.today .day-name,
+.day-cell.today .day-num { color:#fff; }
+.day-cell.filtered { background:var(--blue); }
+.day-cell.filtered .day-name,
+.day-cell.filtered .day-num { color:#fff; }
+.day-name { font-size:10px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.3px; }
+.day-num  { font-size:17px; font-weight:800; color:var(--text2); }
+.day-dot  { width:5px; height:5px; border-radius:50%; background:var(--green); }
+.day-dot.red { background:var(--red); }
+
+/* ══ FIELD ════════════════════════════════════════════════════ */
+.field {
+  background:var(--bg); border-radius:12px;
+  padding:10px 14px; border:1.5px solid var(--border);
+  transition:border-color .15s;
+}
+.field:focus-within { border-color:var(--blue); }
+.field-label {
+  font-size:10px; font-weight:700; color:var(--text3);
+  text-transform:uppercase; letter-spacing:.6px; margin-bottom:3px;
+}
+
+/* ══ TOGGLE ═══════════════════════════════════════════════════ */
+.toggle { width:38px; height:23px; border-radius:12px; position:relative; cursor:pointer; transition:background .2s; flex-shrink:0; }
+.toggle-knob { position:absolute; top:3.5px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.2); transition:left .2s cubic-bezier(0.4,0,0.2,1); }
+
+/* ══ MODAL ════════════════════════════════════════════════════ */
+.modal-overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.45);
+  display:flex; align-items:center; justify-content:center;
+  z-index:400; backdrop-filter:blur(6px);
+  padding:20px; animation:fadeIn .18s ease both;
+}
+.modal-box {
+  background:var(--card); border-radius:24px;
+  box-shadow:var(--sh-lg); width:100%; max-width:420px;
+  padding:28px 24px; animation:popIn .28s cubic-bezier(.175,.885,.32,1.275) both;
+}
+
+/* ══ SMART INPUT ══════════════════════════════════════════════ */
+.smart-input-wrap {
+  display:flex; align-items:center; gap:12px;
+  background:var(--card); border-radius:var(--r);
+  padding:14px 16px; box-shadow:var(--sh);
+  border:2px solid transparent;
+  transition:border-color .18s, box-shadow .18s;
+  margin-bottom:16px;
+}
+.smart-input-wrap.focused {
+  border-color:var(--blue);
+  box-shadow:0 0 0 4px rgba(99,102,241,.1), var(--sh);
+}
+
+/* ══ STICKY GLASS HEADER ══════════════════════════════════════ */
+.main-hdr {
+  position:sticky; top:0; z-index:10; flex-shrink:0;
+  background:rgba(240,242,245,.78);
+  backdrop-filter:saturate(180%) blur(18px);
+  -webkit-backdrop-filter:saturate(180%) blur(18px);
+  border-bottom:1px solid rgba(0,0,0,.045);
+  padding:22px 22px 0;
+  transition:box-shadow .2s;
+}
+[data-theme="dark"] .main-hdr {
+  background:rgba(12,14,20,.80);
+  border-bottom-color:rgba(255,255,255,.05);
+}
+
+/* ══ GREETING ═════════════════════════════════════════════════ */
+.greeting {
+  font-size:30px; font-weight:800;
+  line-height:1.15; letter-spacing:-.7px; color:var(--navy);
+}
+.greeting-sub { font-size:13px; color:var(--text3); margin-top:3px; font-weight:500; letter-spacing:.1px; }
+
+/* ══ MISC ═════════════════════════════════════════════════════ */
+.divider { height:1px; background:var(--border); margin:12px 4px; }
+.sheet-handle { width:36px; height:4px; border-radius:2px; background:var(--border); margin:10px auto 20px; }
+.integ-card { background:var(--card); border-radius:var(--r); box-shadow:var(--sh); padding:20px; margin-bottom:12px; }
+.integ-icon { width:44px; height:44px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; flex-shrink:0; }
+.cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.cal-day { min-height:68px; padding:6px; background:var(--card); border-radius:10px; cursor:pointer; transition:background .15s; border:1.5px solid transparent; }
+.cal-day:hover { background:var(--bg); }
+.cal-day.today  { border-color:var(--navy); }
+.cal-day.selected { background:var(--navy); }
+.cal-day.other-month { opacity:.3; }
+.cal-day-num { font-size:12px; font-weight:700; margin-bottom:4px; }
+.cal-day.selected .cal-day-num { color:#fff; }
+.cal-dot-row { display:flex; flex-wrap:wrap; gap:3px; }
+.cal-dot { width:6px; height:6px; border-radius:50%; }
+.card { background:var(--card); border-radius:var(--r); box-shadow:var(--sh); }
+
+/* ══ LOADING ══════════════════════════════════════════════════ */
+#loading {
+  position:fixed; inset:0; background:var(--bg);
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; color:var(--text3); z-index:9999;
+  font-family:'Inter',sans-serif;
+}
+</style>
+</head>
+<body>
+<div id="loading">Loading…</div>
+<div id="root"></div>
+<script>
+window.onerror = function(msg,s,l) {
+  var el = document.getElementById('loading');
+  if (el) el.innerHTML = '<div style="color:#FF4455;font-size:13px;padding:20px;max-width:400px">Error: ' + msg + ' (line ' + l + ')</div>';
+};
+</script>
+<script type="text/babel">
+/* global React, ReactDOM */
+var h = React.createElement;
+var { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+/* ─── DATE UTILS ────────────────────────────────────────── */
+var DAYS3 = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+var DAYS_FULL = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var MON3 = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+var MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function todayISO() { return new Date().toISOString().split('T')[0]; }
+
+function offsetDate(n) {
+  var d = new Date(); d.setDate(d.getDate()+n);
+  return d.toISOString().split('T')[0];
+}
+
+function parseISO(s) {
+  var p = s.split('-');
+  return new Date(+p[0], +p[1]-1, +p[2]);
+}
+
+function daysDiff(dateStr) {
+  var d = parseISO(dateStr);
+  var now = new Date(); now.setHours(0,0,0,0);
+  return Math.round((d - now) / 86400000);
+}
+
+function friendlyDate(dateStr, timeStr) {
+  if (!dateStr) return null;
+  var diff = daysDiff(dateStr);
+  var d = parseISO(dateStr);
+  var label;
+  if (diff < -1)  label = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  else if (diff===-1) label = 'Yesterday';
+  else if (diff===0)  label = 'Today';
+  else if (diff===1)  label = 'Tomorrow';
+  else if (diff<7)    label = DAYS_FULL[d.getDay()];
+  else                label = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  if (timeStr) {
+    var p = timeStr.split(':');
+    var h2 = +p[0]; var m = +p[1];
+    var ap = h2>=12?'PM':'AM'; var hr = h2%12||12;
+    label += ' · '+hr+':'+(m<10?'0':'')+m+' '+ap;
+  }
+  return label;
+}
+
+function priOf(dateStr) {
+  if (!dateStr) return 'none';
+  var diff = daysDiff(dateStr);
+  if (diff<0)  return 'overdue';
+  if (diff===0) return 'today';
+  if (diff<=3) return 'soon';
+  return 'later';
+}
+
+function sectionFor(dateStr) {
+  if (!dateStr) return 'Someday';
+  var diff = daysDiff(dateStr);
+  if (diff<0)  return 'Overdue';
+  if (diff===0) return 'Today';
+  if (diff<=7) return 'This Week';
+  return 'Later';
+}
+
+function uid() { return Math.random().toString(36).slice(2,10); }
+
+function greeting() {
+  var h3 = new Date().getHours();
+  if (h3<12) return 'Good morning';
+  if (h3<17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+/* ─── NLP PARSER ────────────────────────────────────────── */
+function parseNLP(raw) {
+  var text = raw.trim();
+  var title = text;
+  var dueDate = null;
+  var dueTime = null;
+
+  // Time
+  var timeRx = /(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i;
+  var tm = title.match(timeRx);
+  if (tm) {
+    var h2 = +tm[1]; var m = +(tm[2]||0); var ap = tm[3].toLowerCase();
+    if (ap==='pm' && h2!==12) h2+=12;
+    if (ap==='am' && h2===12) h2=0;
+    dueTime = (h2<10?'0':'')+h2+':'+(m<10?'0':'')+m;
+    title = title.replace(tm[0],'').trim();
+  }
+
+  var now = new Date(); now.setHours(0,0,0,0);
+
+  var nextM = title.match(/\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i);
+  if (nextM) {
+    var di = DAYS_FULL.findIndex(function(d){return d.toLowerCase()===nextM[1].toLowerCase();});
+    var diff2 = ((di-now.getDay()+7)%7)||7;
+    var t = new Date(now); t.setDate(now.getDate()+diff2);
+    dueDate = t.toISOString().split('T')[0];
+    title = title.replace(nextM[0],'').trim();
+  } else if (/\btomorrow\b/i.test(title)) {
+    var t2 = new Date(now); t2.setDate(now.getDate()+1);
+    dueDate = t2.toISOString().split('T')[0];
+    title = title.replace(/\btomorrow\b/gi,'').trim();
+  } else if (/\btoday\b/i.test(title)) {
+    dueDate = now.toISOString().split('T')[0];
+    title = title.replace(/\btoday\b/gi,'').trim();
+  } else {
+    var dayM = title.match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i);
+    if (dayM) {
+      var di2 = DAYS_FULL.findIndex(function(d){return d.toLowerCase()===dayM[1].toLowerCase();});
+      var diff3 = ((di2-now.getDay()+7)%7)||7;
+      var t3 = new Date(now); t3.setDate(now.getDate()+diff3);
+      dueDate = t3.toISOString().split('T')[0];
+      title = title.replace(dayM[0],'').trim();
+    }
+  }
+
+  if (!dueDate) {
+    var slashM = title.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/);
+    if (slashM) {
+      var yr = +slashM[3]; if (yr<100) yr+=2000;
+      var dt = new Date(yr,+slashM[1]-1,+slashM[2]);
+      dueDate = dt.toISOString().split('T')[0];
+      title = title.replace(slashM[0],'').trim();
+    }
+  }
+  if (!dueDate) {
+    var moRx = new RegExp('\\b('+MON3.join('|')+')[a-z]*\\s+(\\d{1,2})\\b','i');
+    var moM = title.match(moRx);
+    if (moM) {
+      var moIdx = MON3.findIndex(function(m2){return m2===moM[1].toLowerCase().slice(0,3);});
+      var yr2 = now.getFullYear();
+      var dt2 = new Date(yr2,moIdx,+moM[2]);
+      if (dt2<now) dt2.setFullYear(yr2+1);
+      dueDate = dt2.toISOString().split('T')[0];
+      title = title.replace(moM[0],'').trim();
+    }
+  }
+  if (!dueDate) {
+    var inM = title.match(/\bin\s+(\d+)\s+(days?|weeks?)\b/i);
+    if (inM) {
+      var n2 = +inM[1]; var isWk = /week/i.test(inM[2]);
+      var t4 = new Date(now); t4.setDate(now.getDate()+(isWk?n2*7:n2));
+      dueDate = t4.toISOString().split('T')[0];
+      title = title.replace(inM[0],'').trim();
+    }
+  }
+
+  title = title.replace(/\s+/g,' ').replace(/[,;:.]+$/,'').trim()||raw.trim();
+  return { title:title, dueDate:dueDate, dueTime:dueTime };
+}
+
+/* ─── NOTIFICATIONS ─────────────────────────────────────── */
+function askNotif() {
+  if ('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+}
+function scheduleNotif(task) {
+  if (!task.reminder||!task.dueDate) return;
+  if (!('Notification' in window)||Notification.permission!=='granted') return;
+  var p = (task.dueTime||'23:59').split(':');
+  var due = parseISO(task.dueDate); due.setHours(+p[0],+p[1],0,0);
+  var delay = due.getTime()-(task.reminderOffset||60)*60000-Date.now();
+  if (delay>0&&delay<7*86400000) {
+    setTimeout(function() {
+      new Notification('TaskFlow',{body:task.title+' — '+friendlyDate(task.dueDate,task.dueTime)});
+    }, delay);
+  }
+}
+
+/* ─── SAMPLE DATA ────────────────────────────────────────── */
+var SAMPLE = [
+  {id:uid(),title:'CS 341 Homework 3',desc:'Dynamic programming — ch. 7–9',dueDate:todayISO(),dueTime:'23:59',reminder:true,reminderOffset:60,recurring:false,recurringType:null,completed:false,source:'gradescope',tags:['CS 341']},
+  {id:uid(),title:'MATH 208 Problem Set',desc:'Problems 4.1–4.7',dueDate:offsetDate(1),dueTime:'23:59',reminder:true,reminderOffset:1440,recurring:false,recurringType:null,completed:false,source:'gradescope',tags:['MATH 208']},
+  {id:uid(),title:'Read Chapter 12',desc:'Distributed systems reading',dueDate:offsetDate(3),dueTime:null,reminder:false,reminderOffset:null,recurring:false,recurringType:null,completed:false,source:'manual',tags:[]},
+  {id:uid(),title:'Lab Report Draft',desc:'CSE 360 lab section report',dueDate:offsetDate(7),dueTime:'17:00',reminder:true,reminderOffset:1440,recurring:false,recurringType:null,completed:false,source:'courseweb',tags:['CSE 360']},
+  {id:uid(),title:'Weekly Reading Response',desc:'Submit on Canvas',dueDate:todayISO(),dueTime:'11:59',reminder:true,reminderOffset:120,recurring:true,recurringType:'weekly',completed:true,source:'courseweb',tags:['ENGL 281']},
+  {id:uid(),title:'Quiz 4 Review',desc:'Trees, graphs, heaps',dueDate:offsetDate(-1),dueTime:'10:00',reminder:false,reminderOffset:null,recurring:false,recurringType:null,completed:true,source:'gradescope',tags:['CS 341']},
+];
+
+/* ─── REAL ICS INTEGRATION HELPERS ───────────────────────── */
+/* Fetches a public iCal (.ics) feed through our Vercel serverless
+ * proxy at /api/fetch-ics (needed to bypass browser CORS), then
+ * converts each VEVENT into a TaskFlow task object. */
+async function fetchIcsEvents(icsUrl) {
+  var res = await fetch('/api/fetch-ics?url=' + encodeURIComponent(icsUrl));
+  if (!res.ok) {
+    var err = {};
+    try { err = await res.json(); } catch(e){}
+    throw new Error(err.error || ('HTTP ' + res.status));
+  }
+  var data = await res.json();
+  return data.events || [];
+}
+
+/* Try to extract a course code tag from a summary (e.g. "CS 341 Homework 3" → "CS 341"). */
+function extractTag(summary) {
+  if (!summary) return null;
+  var m = summary.match(/\b([A-Z]{2,5})[\s-]?(\d{2,4}[A-Z]?)\b/);
+  if (m) return (m[1] + ' ' + m[2]).toUpperCase();
+  return null;
+}
+
+function normalizeKey(s) {
+  return String(s||'').toLowerCase().replace(/\s+/g,' ').trim();
+}
+
+function eventsToTasks(events, source, defaultTag) {
+  var todayI = todayISO();
+  // Horizon: include past 14d + future 180d so stale feeds don't flood
+  var back = new Date(Date.now() - 14*86400000).toISOString().slice(0,10);
+  var fwd  = new Date(Date.now() + 180*86400000).toISOString().slice(0,10);
+  return events
+    .filter(function(e){ return e.date && e.date >= back && e.date <= fwd; })
+    .map(function(e){
+      var tag = extractTag(e.summary) || defaultTag || null;
+      return {
+        title: e.summary,
+        desc:  e.description || e.location || '',
+        dueDate: e.date,
+        dueTime: e.time || null,
+        source: source,
+        tags: tag ? [tag] : [],
+        recurring: !!e.rrule,
+        recurringType: guessRecurring(e.rrule),
+        externalId: e.uid || (source+':'+e.summary+':'+e.date),
+      };
+    });
+}
+
+function anyIntegrationConnected(i) {
+  if (!i) return false;
+  if (i.gradescope) return true;
+  if (i.canvas) return true;
+  if (i.courseWebs && i.courseWebs.length) return true;
+  return false;
+}
+
+function guessRecurring(rrule) {
+  if (!rrule) return null;
+  var s = rrule.toUpperCase();
+  if (s.indexOf('FREQ=WEEKLY')  >= 0) return 'weekly';
+  if (s.indexOf('FREQ=DAILY')   >= 0) return 'daily';
+  if (s.indexOf('FREQ=MONTHLY') >= 0) return 'monthly';
+  if (s.indexOf('FREQ=YEARLY')  >= 0) return 'yearly';
+  return null;
+}
+
+/* ─── REMINDER OPTIONS ───────────────────────────────────── */
+var REM_OPTS = [
+  {label:'15 min before',val:15},{label:'30 min before',val:30},
+  {label:'1 hour before',val:60},{label:'2 hours before',val:120},
+  {label:'1 day before',val:1440},{label:'2 days before',val:2880},
+  {label:'1 week before',val:10080},
+];
+
+/* ─── SVG ICONS ──────────────────────────────────────────── */
+function Ico({d, w, h3}) {
+  return (
+    <svg width={w||16} height={h3||16} viewBox={'0 0 '+(w||16)+' '+(h3||16)} fill="none">
+      <path d={d} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+var ICO = {
+  check:    <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1.5 5.5l3 3 5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  plus:     <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>,
+  close:    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>,
+  cal:      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M1 5.5h12M4.5 1v2.5M9.5 1v2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  bell:     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5A3.5 3.5 0 0 1 10.5 5v3l1 2H2.5l1-2V5A3.5 3.5 0 0 1 7 1.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/><path d="M5.5 10.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  repeat:   <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 5A5 5 0 0 1 11.2 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M10 2l1.5 1.5L10 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 9A5 5 0 0 1 2.8 10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M4 12l-1.5-1.5L4 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  trash:    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M5 4V2.5h4V4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M5.5 6.5v3.5M8.5 6.5v3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M3 4l.6 7.2a1 1 0 0 0 1 .8h4.8a1 1 0 0 0 1-.8L11 4" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>,
+  today:    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="2" width="13" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M1.5 6.5h13M5.5 1v2.5M10.5 1v2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><circle cx="5" cy="10" r="1" fill="currentColor"/></svg>,
+  all:      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2.5 5h11M2.5 8h11M2.5 11h7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>,
+  upcoming: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  done:     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l3.5 3.5L13 5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  link:     <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 10a3.5 3.5 0 0 0 5 .5l2-1.8a3.5 3.5 0 0 0-5-4.9L6.5 5.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M10 6a3.5 3.5 0 0 0-5-.5L3 7.3a3.5 3.5 0 0 0 5 4.9l1.5-1.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>,
+  refresh:  <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M12 7A5 5 0 1 1 7 2a5 5 0 0 1 3.5 1.5L12 2v3.5H8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  search:   <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.6"/><path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>,
+  chevD:    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  chevR:    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  settings: <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.4 3.4l.85.85M11.75 11.75l.85.85M3.4 12.6l.85-.85M11.75 4.25l.85-.85" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  apple:    <svg width="16" height="16" viewBox="0 0 814 1000" fill="currentColor"><path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-37.5-155.5-118.3c-42.8-68.3-83.7-175.9-83.7-278.8 0-190.5 124.4-291.2 246.8-291.2 66.1 0 121.2 43.4 162.7 43.4 39.5 0 101.1-46 176.3-46 28.5 0 130.9 2.6 198.3 99.2zm-234-181.5c31.1-36.9 53.1-88.1 53.1-139.3 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.8 33.7-147.1 75.8-28.5 32.4-55.1 83.6-55.1 135.5 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 135.5-71.3z"/></svg>,
+};
+
+/* ─── PRIMITIVES ─────────────────────────────────────────── */
+function Toggle({ on, onChange }) {
+  return (
+    <div
+      className="toggle"
+      style={{background: on ? 'var(--green)' : '#D1D5DB'}}
+      onClick={function(){onChange(!on);}}
+    >
+      <div className="toggle-knob" style={{left: on ? 17 : 3}} />
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div className="field">
+      <div className="field-label">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function Divider() {
+  return <div className="divider" />;
+}
+
+function Avatar({ name, color }) {
+  var colors = ['#FFD6D6','#D6E4FF','#D6FFE8','#FFF3D6','#E8D6FF'];
+  var textColors = ['#C0392B','#2563EB','#059669','#D97706','#7C3AED'];
+  var idx = name ? name.charCodeAt(0) % colors.length : 0;
+  var bg = color || colors[idx];
+  var tc = textColors[idx];
+  return (
+    <div className="avatar" style={{background:bg,color:tc}}>
+      {name ? name[0].toUpperCase() : '?'}
+    </div>
+  );
+}
+
+/* ─── WEEK STRIP ─────────────────────────────────────────── */
+function WeekStrip({ tasks, onDayFilter, filtered }) {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() - today.getDay());
+
+  var days = [];
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(startOfWeek); d.setDate(startOfWeek.getDate()+i);
+    var iso = d.toISOString().split('T')[0];
+    var hasTasks = tasks.some(function(t){return !t.completed && t.dueDate===iso;});
+    var hasOverdue = tasks.some(function(t){return !t.completed && t.dueDate && t.dueDate<iso && d<=today;});
+    var isToday = (d.getTime()===today.getTime());
+    days.push({d:d, iso:iso, hasTasks:hasTasks, hasOverdue:hasOverdue, isToday:isToday});
+  }
+
+  return (
+    <div className="week-strip">
+      {days.map(function(day) {
+        var isFiltered = filtered===day.iso;
+        return (
+          <div
+            key={day.iso}
+            className={'day-cell'+(day.isToday?' today':'')+(isFiltered&&!day.isToday?' selected':'')}
+            style={isFiltered&&!day.isToday?{background:'var(--blue-l)',color:'var(--blue)'}:{}}
+            onClick={function(){onDayFilter(isFiltered?null:day.iso);}}
+          >
+            <span className="day-name" style={isFiltered&&!day.isToday?{color:'var(--blue)'}:{}}>
+              {DAYS3[day.d.getDay()]}
+            </span>
+            <span className="day-num" style={isFiltered&&!day.isToday?{color:'var(--blue)'}:{}}>
+              {day.d.getDate()}
+            </span>
+            {day.hasTasks && (
+              <div className={'day-dot'+(day.d<today?' red':'')} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── TASK ITEM ──────────────────────────────────────────── */
+function TaskItem({ task, onToggle, onSelect, selected }) {
+  var [justCompleted, setJustCompleted] = useState(false);
+  var pri = priOf(task.dueDate);
+  var df = friendlyDate(task.dueDate, task.dueTime);
+  var priClr = {overdue:'var(--red)',today:'var(--amber)',soon:'var(--green)',later:'var(--text3)',none:'var(--text3)'};
+  var cbClr = task.completed ? 'var(--green)' : priClr[pri];
+  var srcLabel = task.source==='gradescope'?'Gradescope':task.source==='canvas'?'Canvas':task.source==='courseweb'?'Course':null;
+  var srcClass = task.source==='gradescope'?'chip-gs':task.source==='canvas'?'chip-cv':task.source==='courseweb'?'chip-cw':'chip-blue';
+
+  function handleToggle(e) {
+    e.stopPropagation();
+    if (!task.completed) {
+      setJustCompleted(true);
+      setTimeout(function(){setJustCompleted(false);}, 400);
+    }
+    onToggle(task.id, !task.completed);
+  }
+
+  var cls = 'task-item a-up'
+    + (selected ? ' selected' : '')
+    + (task.completed ? ' task-done' : '');
+
+  return (
+    <div className={cls} onClick={function(){onSelect(task.id);}}>
+      {/* Checkbox */}
+      <div
+        className={'cb-wrap' + (justCompleted ? ' checked' : '')}
+        onClick={handleToggle}
+        style={{
+          border:'2px solid '+(task.completed?'var(--green)':cbClr),
+          background:task.completed?'var(--green)':'transparent',
+          color:'#fff',
+          boxShadow:task.completed?'0 0 0 3px rgba(34,197,94,.18)':'none',
+          transition:'all .22s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      >
+        {task.completed && (
+          <span style={{display:'flex',animation:'fadeIn .15s ease both'}}>
+            {ICO.check}
+          </span>
+        )}
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+          <span style={{
+            fontSize:14.5,fontWeight:task.completed?400:600,flex:1,minWidth:0,
+            overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+            textDecoration:task.completed?'line-through':'none',
+            color:task.completed?'var(--text3)':'var(--text)',
+            transition:'color .3s',
+          }}>
+            {task.title}
+          </span>
+          {srcLabel && <span className={'chip '+srcClass}>{srcLabel}</span>}
+          {task.recurring && <span style={{color:'var(--text3)',display:'flex',opacity:.6}}>{ICO.repeat}</span>}
+        </div>
+        {(df||task.reminder) && (
+          <div style={{display:'flex',alignItems:'center',gap:8,marginTop:5,flexWrap:'wrap'}}>
+            {df && (
+              <span style={{
+                display:'flex',alignItems:'center',gap:4,fontSize:11.5,fontWeight:500,
+                color:task.completed?'var(--text3)':priClr[pri],
+              }}>
+                {ICO.cal}&nbsp;{df}
+              </span>
+            )}
+            {task.reminder&&!task.completed && (
+              <span style={{display:'flex',color:'var(--text3)',opacity:.7}}>{ICO.bell}</span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── TASK SECTION ───────────────────────────────────────── */
+function TaskSection({ title, tasks, selectedId, onToggle, onSelect }) {
+  var [open, setOpen] = useState(true);
+  if (!tasks.length) return null;
+  var cls = title==='Overdue'?'overdue':title==='Today'?'today':'';
+
+  return (
+    <div style={{marginBottom:24}}>
+      <div
+        className={'section-hdr '+cls}
+        style={{cursor:'pointer',userSelect:'none'}}
+        onClick={function(){setOpen(function(o){return !o;});}}
+      >
+        <span style={{transform:open?'':'rotate(-90deg)',transition:'transform .2s',display:'inline-flex'}}>
+          {ICO.chevD}
+        </span>
+        {title}
+        <span style={{
+          fontSize:11,fontWeight:700,
+          background:title==='Overdue'?'var(--red-l)':title==='Today'?'var(--amber-l)':'var(--card)',
+          color:title==='Overdue'?'var(--red)':title==='Today'?'var(--amber)':'var(--text3)',
+          padding:'1px 8px',borderRadius:20,
+        }}>
+          {tasks.length}
+        </span>
+      </div>
+      {open && tasks.map(function(t){
+        return (
+          <TaskItem key={t.id} task={t} onToggle={onToggle}
+            onSelect={onSelect} selected={t.id===selectedId}/>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── SMART INPUT ────────────────────────────────────────── */
+function SmartInput({ onAdd }) {
+  var [val,setVal] = useState('');
+  var [focused,setFocused] = useState(false);
+
+  function submit() {
+    var v = val.trim(); if (!v) return;
+    onAdd(v); setVal('');
+  }
+  function handleKey(e) { if (e.key==='Enter'){e.preventDefault();submit();} }
+
+  return (
+    <div style={{marginBottom:20}}>
+      <div className={'smart-input-wrap'+(focused?' focused':'')} style={{
+        background:'var(--card)',borderRadius:'var(--r)',
+      }}>
+        <span style={{color:focused?'var(--blue)':'var(--text3)',display:'flex',flexShrink:0}}>{ICO.plus}</span>
+        <input
+          value={val}
+          onChange={function(e){setVal(e.target.value);}}
+          onKeyDown={handleKey}
+          onFocus={function(){setFocused(true);}}
+          onBlur={function(){setFocused(false);}}
+          placeholder='Add a task… "CS hw tuesday at 11pm"'
+          style={{fontSize:14,flex:1}}
+        />
+        {val && (
+          <button
+            onClick={submit}
+            style={{
+              flexShrink:0,background:'var(--navy)',color:'#fff',
+              width:30,height:30,borderRadius:9,
+              display:'flex',alignItems:'center',justifyContent:'center',
+            }}
+          >
+            {ICO.chevR}
+          </button>
+        )}
+      </div>
+      {focused&&!val && (
+        <p className="a-fade" style={{fontSize:11,color:'var(--text3)',marginTop:6,paddingLeft:2}}>
+          Supports natural language — dates, days, and times are auto-detected
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ─── ADD TASK MODAL ─────────────────────────────────────── */
+function AddModal({ input, parsed, onConfirm, onCancel }) {
+  var [title,setTitle]   = useState(parsed.title);
+  var [date,setDate]     = useState(parsed.dueDate||'');
+  var [time,setTime]     = useState(parsed.dueTime||'');
+  var [remind,setRemind] = useState(!!parsed.dueDate);
+  var [offset,setOffset] = useState(60);
+
+  function confirm() {
+    onConfirm({title:title,dueDate:date||null,dueTime:time||null,reminder:remind,reminderOffset:offset});
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-box a-pop" onClick={function(e){e.stopPropagation();}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:16}}>
+          <span style={{fontSize:16,fontWeight:800,flex:1}}>New Task</span>
+          <button onClick={onCancel} style={{color:'var(--text3)',display:'flex',padding:4}}>
+            {ICO.close}
+          </button>
+        </div>
+
+        <div style={{
+          fontSize:12,color:'var(--text3)',marginBottom:18,padding:'8px 12px',
+          background:'var(--bg)',borderRadius:10,fontStyle:'italic',
+        }}>
+          "{input}"
+        </div>
+
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          <Field label="Task Name">
+            <input
+              value={title}
+              onChange={function(e){setTitle(e.target.value);}}
+              autoFocus
+              style={{fontSize:14,fontWeight:600,paddingTop:2}}
+            />
+          </Field>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <Field label="Due Date">
+              <input type="date" value={date} onChange={function(e){setDate(e.target.value);}} style={{fontSize:13}} />
+            </Field>
+            <Field label="Time">
+              <input type="time" value={time} onChange={function(e){setTime(e.target.value);}} style={{fontSize:13}} />
+            </Field>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:12,padding:'4px 0'}}>
+            <Toggle on={remind} onChange={setRemind} />
+            <span style={{fontSize:13,color:'var(--text2)',fontWeight:500}}>Set reminder</span>
+            {remind && (
+              <select
+                value={offset}
+                onChange={function(e){setOffset(+e.target.value);}}
+                style={{
+                  marginLeft:'auto',fontSize:12,color:'var(--text)',
+                  background:'var(--bg)',borderRadius:8,
+                  padding:'6px 10px',border:'1.5px solid var(--border)',cursor:'pointer',
+                }}
+              >
+                {REM_OPTS.map(function(o){return <option key={o.val} value={o.val}>{o.label}</option>;})}
+              </select>
+            )}
+          </div>
+        </div>
+
+        <div style={{display:'flex',gap:10,marginTop:20}}>
+          <button
+            onClick={onCancel}
+            style={{
+              flex:1,padding:'12px 0',borderRadius:40,
+              border:'2px solid var(--bg)',
+              fontSize:14,fontWeight:600,color:'var(--text2)',
+              background:'var(--bg)',
+            }}
+          >
+            Cancel
+          </button>
+          <button className="btn-navy" onClick={confirm} style={{flex:2,padding:'12px 0',borderRadius:40}}>
+            Add Task
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── DETAIL PANEL (desktop side panel) ─────────────────── */
+function DetailPanel({ task, onUpdate, onDelete, onClose }) {
+  var [title,setTitle]       = useState(task.title);
+  var [desc,setDesc]         = useState(task.desc||'');
+  var [dueDate,setDueDate]   = useState(task.dueDate||'');
+  var [dueTime,setDueTime]   = useState(task.dueTime||'');
+  var [reminder,setReminder] = useState(task.reminder||false);
+  var [offset,setOffset]     = useState(task.reminderOffset||60);
+  var [recur,setRecur]       = useState(task.recurring||false);
+  var [recType,setRecType]   = useState(task.recurringType||'weekly');
+  var dirty = useRef(false);
+
+  useEffect(function(){
+    setTitle(task.title);setDesc(task.desc||'');setDueDate(task.dueDate||'');
+    setDueTime(task.dueTime||'');setReminder(task.reminder||false);
+    setOffset(task.reminderOffset||60);setRecur(task.recurring||false);
+    setRecType(task.recurringType||'weekly');dirty.current=false;
+  },[task.id]);
+
+  useEffect(function(){
+    if (!dirty.current) return;
+    var t = setTimeout(function(){
+      onUpdate({...task,title:title,desc:desc,dueDate:dueDate||null,dueTime:dueTime||null,
+        reminder:reminder,reminderOffset:offset,recurring:recur,recurringType:recur?recType:null});
+    },500);
+    return function(){clearTimeout(t);};
+  },[title,desc,dueDate,dueTime,reminder,offset,recur,recType]);
+
+  function m(fn){ return function(v){fn(v);dirty.current=true;}; }
+
+  var dotClr = {gradescope:'#E8222F',canvas:'#E13F29',courseweb:'#2563EB',manual:'var(--blue)'}[task.source]||'var(--blue)';
+  var srcLabel = {gradescope:'Gradescope',canvas:'Canvas',courseweb:'Course Website',manual:'Added manually'}[task.source]||'Manual';
+
+  return (
+    <div className="detail-col a-right">
+      {/* Header */}
+      <div style={{
+        padding:'16px 20px',borderBottom:'1px solid var(--border)',
+        display:'flex',alignItems:'center',gap:8,flexShrink:0,
+      }}>
+        <span style={{fontSize:11,fontWeight:700,textTransform:'uppercase',letterSpacing:'.7px',color:'var(--text3)',flex:1}}>
+          Task Details
+        </span>
+        <button
+          onClick={function(){onDelete(task.id);}}
+          style={{color:'var(--text3)',display:'flex',padding:'5px 7px',borderRadius:8,transition:'color .12s'}}
+          onMouseEnter={function(e){e.currentTarget.style.color='var(--red)';}}
+          onMouseLeave={function(e){e.currentTarget.style.color='var(--text3)';}}
+        >
+          {ICO.trash}
+        </button>
+        <button onClick={onClose} style={{color:'var(--text2)',display:'flex',padding:'5px 7px',borderRadius:8}}>
+          {ICO.close}
+        </button>
+      </div>
+
+      <div style={{flex:1,overflowY:'auto',padding:'20px 20px',paddingBottom:30}}>
+        <textarea
+          value={title}
+          onChange={function(e){setTitle(e.target.value);dirty.current=true;}}
+          rows={2}
+          style={{fontSize:17,fontWeight:700,lineHeight:1.4,width:'100%',resize:'none',marginBottom:10,color:'var(--navy)'}}
+        />
+        <textarea
+          value={desc}
+          onChange={function(e){setDesc(e.target.value);dirty.current=true;}}
+          placeholder="Add notes…"
+          rows={3}
+          style={{
+            fontSize:13,lineHeight:1.65,width:'100%',resize:'none',
+            color:'var(--text2)',borderBottom:'1px solid var(--bg)',
+            paddingBottom:14,marginBottom:16,
+          }}
+        />
+
+        <p className="field-label" style={{marginBottom:8}}>Due Date &amp; Time</p>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
+          <Field label="Date">
+            <input type="date" value={dueDate} onChange={function(e){setDueDate(e.target.value);dirty.current=true;}} style={{fontSize:13}} />
+          </Field>
+          <Field label="Time">
+            <input type="time" value={dueTime} onChange={function(e){setDueTime(e.target.value);dirty.current=true;}} style={{fontSize:13}} />
+          </Field>
+        </div>
+
+        <Divider />
+
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:reminder?12:0}}>
+          <Toggle on={reminder} onChange={m(setReminder)} />
+          <span style={{fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:6}}>
+            <span style={{color:'var(--text2)',display:'flex'}}>{ICO.bell}</span> Reminder
+          </span>
+        </div>
+        {reminder && (
+          <div style={{marginLeft:46,marginTop:8}}>
+            <select
+              value={offset}
+              onChange={function(e){setOffset(+e.target.value);dirty.current=true;}}
+              style={{fontSize:13,color:'var(--text)',background:'var(--bg)',borderRadius:10,padding:'8px 12px',border:'none',width:'100%',cursor:'pointer'}}
+            >
+              {REM_OPTS.map(function(o){return <option key={o.val} value={o.val}>{o.label}</option>;})}
+            </select>
+          </div>
+        )}
+
+        <Divider />
+
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:recur?12:0}}>
+          <Toggle on={recur} onChange={m(setRecur)} />
+          <span style={{fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:6}}>
+            <span style={{color:'var(--text2)',display:'flex'}}>{ICO.repeat}</span> Recurring
+          </span>
+        </div>
+        {recur && (
+          <div style={{marginLeft:46,marginTop:8}}>
+            <select
+              value={recType}
+              onChange={function(e){setRecType(e.target.value);dirty.current=true;}}
+              style={{fontSize:13,color:'var(--text)',background:'var(--bg)',borderRadius:10,padding:'8px 12px',border:'none',width:'100%',cursor:'pointer'}}
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Every 2 weeks</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        )}
+
+        <Divider />
+
+        <div style={{display:'flex',alignItems:'center',gap:8,fontSize:12,color:'var(--text3)'}}>
+          <span style={{display:'flex'}}>{ICO.link}</span>
+          <span style={{display:'inline-block',width:8,height:8,borderRadius:'50%',background:dotClr,flexShrink:0}} />
+          <span style={{fontWeight:500,color:'var(--text2)'}}>{srcLabel}</span>
+        </div>
+
+        {task.tags&&task.tags.length>0 && (
+          <div style={{marginTop:12,display:'flex',gap:5,flexWrap:'wrap'}}>
+            {task.tags.map(function(tg){
+              return <span key={tg} className="chip chip-gray">{tg}</span>;
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── DETAIL SHEET (mobile) ──────────────────────────────── */
+function DetailSheet({ task, onUpdate, onDelete, onClose }) {
+  var [title,setTitle]       = useState(task.title);
+  var [desc,setDesc]         = useState(task.desc||'');
+  var [dueDate,setDueDate]   = useState(task.dueDate||'');
+  var [dueTime,setDueTime]   = useState(task.dueTime||'');
+  var [reminder,setReminder] = useState(task.reminder||false);
+  var [offset,setOffset]     = useState(task.reminderOffset||60);
+  var [recur,setRecur]       = useState(task.recurring||false);
+  var [recType,setRecType]   = useState(task.recurringType||'weekly');
+  var dirty = useRef(false);
+
+  useEffect(function(){
+    setTitle(task.title);setDesc(task.desc||'');setDueDate(task.dueDate||'');
+    setDueTime(task.dueTime||'');setReminder(task.reminder||false);
+    setOffset(task.reminderOffset||60);setRecur(task.recurring||false);
+    setRecType(task.recurringType||'weekly');dirty.current=false;
+  },[task.id]);
+
+  useEffect(function(){
+    if (!dirty.current) return;
+    var t = setTimeout(function(){
+      onUpdate({...task,title:title,desc:desc,dueDate:dueDate||null,dueTime:dueTime||null,
+        reminder:reminder,reminderOffset:offset,recurring:recur,recurringType:recur?recType:null});
+    },500);
+    return function(){clearTimeout(t);};
+  },[title,desc,dueDate,dueTime,reminder,offset,recur,recType]);
+
+  function m(fn){ return function(v){fn(v);dirty.current=true;}; }
+
+  return (
+    <React.Fragment>
+      <div className="bottom-sheet-overlay a-fade" onClick={onClose} />
+      <div className="bottom-sheet a-sheet" style={{display:'block'}}>
+        <div className="sheet-handle" />
+        <div style={{padding:'0 20px 24px'}}>
+          <div style={{display:'flex',alignItems:'flex-start',gap:12,marginBottom:16}}>
+            <div style={{flex:1}}>
+              <textarea
+                value={title}
+                onChange={function(e){setTitle(e.target.value);dirty.current=true;}}
+                rows={2}
+                style={{fontSize:18,fontWeight:700,lineHeight:1.3,width:'100%',resize:'none',color:'var(--navy)'}}
+              />
+            </div>
+            <div style={{display:'flex',gap:6,flexShrink:0}}>
+              <button
+                onClick={function(){onDelete(task.id);onClose();}}
+                style={{color:'var(--text3)',display:'flex',padding:8,borderRadius:10,background:'var(--bg)'}}
+              >
+                {ICO.trash}
+              </button>
+              <button
+                onClick={onClose}
+                style={{color:'var(--text2)',display:'flex',padding:8,borderRadius:10,background:'var(--bg)'}}
+              >
+                {ICO.close}
+              </button>
+            </div>
+          </div>
+
+          <textarea
+            value={desc}
+            onChange={function(e){setDesc(e.target.value);dirty.current=true;}}
+            placeholder="Add notes…"
+            rows={2}
+            style={{
+              fontSize:14,lineHeight:1.6,width:'100%',resize:'none',
+              color:'var(--text2)',marginBottom:16,
+              paddingBottom:16,borderBottom:'1px solid var(--bg)',
+            }}
+          />
+
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
+            <Field label="Due Date">
+              <input type="date" value={dueDate} onChange={function(e){setDueDate(e.target.value);dirty.current=true;}} style={{fontSize:13}} />
+            </Field>
+            <Field label="Time">
+              <input type="time" value={dueTime} onChange={function(e){setDueTime(e.target.value);dirty.current=true;}} style={{fontSize:13}} />
+            </Field>
+          </div>
+
+          <div style={{
+            display:'flex',alignItems:'center',justifyContent:'space-between',
+            padding:'12px 16px',background:'var(--bg)',borderRadius:14,marginBottom:10,
+          }}>
+            <span style={{fontSize:14,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
+              <span style={{color:'var(--text2)',display:'flex'}}>{ICO.bell}</span>Reminder
+            </span>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              {reminder && (
+                <select
+                  value={offset}
+                  onChange={function(e){setOffset(+e.target.value);dirty.current=true;}}
+                  style={{fontSize:12,background:'transparent',border:'none',color:'var(--text2)',cursor:'pointer'}}
+                >
+                  {REM_OPTS.map(function(o){return <option key={o.val} value={o.val}>{o.label}</option>;})}
+                </select>
+              )}
+              <Toggle on={reminder} onChange={m(setReminder)} />
+            </div>
+          </div>
+
+          <div style={{
+            display:'flex',alignItems:'center',justifyContent:'space-between',
+            padding:'12px 16px',background:'var(--bg)',borderRadius:14,marginBottom:20,
+          }}>
+            <span style={{fontSize:14,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
+              <span style={{color:'var(--text2)',display:'flex'}}>{ICO.repeat}</span>Recurring
+            </span>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              {recur && (
+                <select
+                  value={recType}
+                  onChange={function(e){setRecType(e.target.value);dirty.current=true;}}
+                  style={{fontSize:12,background:'transparent',border:'none',color:'var(--text2)',cursor:'pointer'}}
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="biweekly">Every 2 weeks</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              )}
+              <Toggle on={recur} onChange={m(setRecur)} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
+/* ─── INTEGRATIONS PAGE ──────────────────────────────────── */
+function IntegrationsPage({ integrations, onUpdate, onSync, syncStatus }) {
+  // Canvas state
+  var [cvOpen,setCvOpen] = useState(false);
+  var [cvInst,setCvInst] = useState(
+    (integrations.canvas&&integrations.canvas.institution) || 'https://canvas.uw.edu'
+  );
+  var [cvUrl,setCvUrl] = useState('');
+
+  // Gradescope iCal fallback state (for schools that do offer it)
+  var [gsOpen,setGsOpen] = useState(false);
+  var [gsUrl,setGsUrl]   = useState('');
+
+  // Course website state
+  var [cwOpen,setCwOpen] = useState(false);
+  var [cwName,setCwName] = useState('');
+  var [cwUrl,setCwUrl]   = useState('');
+
+  var cvConn = !!integrations.canvas;
+  var gsConn = !!integrations.gradescope;
+  var courseWebs = integrations.courseWebs || [];
+
+  function save(kind, data) { onUpdate(kind, data); }
+
+  function connectCanvas() {
+    if (!cvUrl.trim()) return;
+    save('canvas', {
+      institution: (cvInst||'').trim().replace(/\/+$/,''),
+      icsUrl: cvUrl.trim(),
+      connectedAt: new Date().toISOString(),
+    });
+    setCvOpen(false); setCvUrl('');
+    onSync();
+  }
+  function connectGradescope() {
+    if (!gsUrl.trim()) return;
+    save('gradescope', { icsUrl: gsUrl.trim(), connectedAt: new Date().toISOString() });
+    setGsOpen(false); setGsUrl('');
+    onSync();
+  }
+  function addCourseWeb() {
+    if (!cwUrl.trim()) return;
+    var next = courseWebs.concat([{
+      id: uid(),
+      name: (cwName||'New Course').trim(),
+      icsUrl: cwUrl.trim(),
+      connectedAt: new Date().toISOString(),
+    }]);
+    save('courseWebs', next);
+    setCwOpen(false); setCwName(''); setCwUrl('');
+    onSync();
+  }
+  function removeCourseWeb(id) {
+    save('courseWebs', courseWebs.filter(function(c){return c.id!==id;}));
+  }
+
+  var anyConn = cvConn || gsConn || courseWebs.length > 0;
+
+  return (
+    <div className="a-fade">
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:24,flexWrap:'wrap',gap:12}}>
+        <div>
+          <h2 style={{fontSize:22,fontWeight:800,color:'var(--navy)'}}>Integrations</h2>
+          <p style={{fontSize:13,color:'var(--text3)',marginTop:3}}>Auto-import assignments from Canvas, Gradescope, and your course sites</p>
+        </div>
+        {anyConn && (
+          <button
+            onClick={onSync}
+            disabled={syncStatus&&syncStatus.running}
+            style={{
+              display:'flex',alignItems:'center',gap:6,padding:'9px 16px',
+              borderRadius:40,background:'var(--navy)',color:'#fff',
+              fontSize:12,fontWeight:700,flexShrink:0,opacity:(syncStatus&&syncStatus.running)?0.6:1,
+            }}
+          >
+            <span className={(syncStatus&&syncStatus.running)?'spinning':''} style={{display:'flex'}}>{ICO.refresh}</span>
+            {(syncStatus&&syncStatus.running)?'Syncing…':'Sync Now'}
+          </button>
+        )}
+      </div>
+
+      {syncStatus && syncStatus.message && !syncStatus.running && (
+        <div style={{
+          padding:'10px 14px',marginBottom:16,borderRadius:12,
+          background:syncStatus.error?'#FEECED':'#E6F8EF',
+          color:syncStatus.error?'#B91C1C':'#0F7B3A',fontSize:12,fontWeight:600,
+        }}>
+          {syncStatus.message}
+        </div>
+      )}
+
+      {/* ── Canvas (hero integration) ───────────────────────── */}
+      <div className="integ-card" style={{borderColor:cvConn?'var(--green)':'transparent'}}>
+        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:14}}>
+          <div className="integ-icon" style={{background:'#FDECE9',color:'#E13F29'}}>C</div>
+          <div style={{flex:1}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:15,fontWeight:700}}>Canvas</span>
+              <span style={{fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:20,background:'#E6F8EF',color:'#0F7B3A'}}>RECOMMENDED</span>
+            </div>
+            <div style={{fontSize:12,color:'var(--text3)',marginTop:2}}>
+              Covers Canvas <strong>and Gradescope</strong> assignments — most schools sync them automatically
+            </div>
+          </div>
+          {cvConn && <div style={{width:10,height:10,borderRadius:'50%',background:'var(--green)',flexShrink:0}} />}
+        </div>
+
+        {!cvConn && !cvOpen && (
+          <button onClick={function(){setCvOpen(true);}} style={{padding:'11px 22px',borderRadius:40,background:'#E13F29',color:'#fff',fontSize:13,fontWeight:700}}>
+            Connect Canvas
+          </button>
+        )}
+        {cvOpen && !cvConn && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <Field label="Your school's Canvas URL">
+              <input type="url" value={cvInst} onChange={function(e){setCvInst(e.target.value);}} placeholder="https://canvas.uw.edu" style={{fontSize:14}} />
+            </Field>
+            <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+              {[
+                {label:'UW',       url:'https://canvas.uw.edu'},
+                {label:'Stanford', url:'https://canvas.stanford.edu'},
+                {label:'Harvard',  url:'https://canvas.harvard.edu'},
+                {label:'MIT',      url:'https://canvas.mit.edu'},
+              ].map(function(p){
+                return <button key={p.label} onClick={function(){setCvInst(p.url);}} style={{fontSize:11,padding:'5px 11px',borderRadius:40,background:cvInst===p.url?'var(--navy)':'var(--bg)',color:cvInst===p.url?'#fff':'var(--text2)',fontWeight:600}}>{p.label}</button>;
+              })}
+            </div>
+            <Field label="Canvas Calendar Feed URL (.ics)">
+              <input type="url" value={cvUrl} autoFocus onChange={function(e){setCvUrl(e.target.value);}} placeholder="https://canvas.uw.edu/feeds/calendars/user_..." style={{fontSize:14}} />
+            </Field>
+            <details style={{fontSize:11,color:'var(--text3)',lineHeight:1.6}}>
+              <summary style={{cursor:'pointer',color:'var(--text2)',fontWeight:600}}>How to get your Canvas calendar feed</summary>
+              <ol style={{margin:'8px 0 0 18px',padding:0}}>
+                <li>Log in to Canvas (e.g. <a href="https://canvas.uw.edu" target="_blank" rel="noopener noreferrer" style={{color:'#2563EB'}}>canvas.uw.edu</a>) using your school login (NetID, SSO, etc.)</li>
+                <li>Click <strong>Calendar</strong> in the left sidebar</li>
+                <li>Scroll to the bottom-right corner and click <strong>Calendar Feed</strong></li>
+                <li>Copy the full URL that appears and paste it above</li>
+              </ol>
+              <p style={{marginTop:6,color:'#0F7B3A',fontWeight:600}}>This feed includes your Gradescope assignments too — no separate Gradescope login needed.</p>
+            </details>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={function(){setCvOpen(false);setCvUrl('');}} style={{flex:1,padding:'11px 0',borderRadius:40,background:'var(--bg)',fontSize:13,fontWeight:600,color:'var(--text2)'}}>Cancel</button>
+              <button onClick={connectCanvas} disabled={!cvUrl.trim()} style={{flex:2,padding:'11px 0',borderRadius:40,background:!cvUrl.trim()?'#E5E7EB':'#E13F29',color:!cvUrl.trim()?'var(--text3)':'#fff',fontSize:13,fontWeight:700}}>
+                Connect &amp; Import
+              </button>
+            </div>
+          </div>
+        )}
+        {cvConn && (
+          <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+            <span style={{fontSize:13,fontWeight:700,color:'var(--green)'}}>✓ Connected</span>
+            <span style={{fontSize:12,color:'var(--text3)'}}>· {integrations.canvas.institution}</span>
+            <button onClick={function(){save('canvas',null);}} style={{marginLeft:'auto',fontSize:12,color:'var(--red)',fontWeight:600}}>Disconnect</button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Gradescope (iCal fallback for schools that offer it) */}
+      <div className="integ-card">
+        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:14}}>
+          <div className="integ-icon" style={{background:'#FEECED',color:'#E8222F'}}>G</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:15,fontWeight:700}}>Gradescope <span style={{fontSize:11,fontWeight:500,color:'var(--text3)'}}>· optional</span></div>
+            <div style={{fontSize:12,color:'var(--text3)',marginTop:2}}>
+              For schools where Gradescope provides a direct calendar feed (not all do)
+            </div>
+          </div>
+          {gsConn && <div style={{width:10,height:10,borderRadius:'50%',background:'var(--green)',flexShrink:0}} />}
+        </div>
+
+        {!gsConn && !gsOpen && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <div style={{padding:'10px 14px',borderRadius:12,background:'#FFFBEB',border:'1px solid #FDE68A',fontSize:12,color:'#92400E',lineHeight:1.6}}>
+              <strong>Most users don't need this.</strong> Gradescope uses school SSO (NetID, etc.) which can't be automated — but your Canvas feed above already includes Gradescope assignments for most schools. Only use this if you know your Gradescope account has a standalone iCal link.
+            </div>
+            <button onClick={function(){setGsOpen(true);}} style={{padding:'10px 20px',borderRadius:40,background:'var(--bg)',color:'var(--text2)',fontSize:13,fontWeight:600,border:'1.5px solid rgba(0,0,0,.1)',alignSelf:'flex-start'}}>
+              I have a Gradescope iCal link
+            </button>
+          </div>
+        )}
+        {gsOpen && !gsConn && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <Field label="Gradescope Calendar URL (.ics)">
+              <input type="url" value={gsUrl} autoFocus onChange={function(e){setGsUrl(e.target.value);}} placeholder="webcal://www.gradescope.com/user_courses.ics?..." style={{fontSize:14}} />
+            </Field>
+            <p style={{fontSize:11,color:'var(--text3)',lineHeight:1.6}}>If your Gradescope has a calendar feed, it's usually under Account → Edit Account → Calendar Feed. Paste the webcal:// or https:// URL above.</p>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={function(){setGsOpen(false);setGsUrl('');}} style={{flex:1,padding:'11px 0',borderRadius:40,background:'var(--bg)',fontSize:13,fontWeight:600,color:'var(--text2)'}}>Cancel</button>
+              <button onClick={connectGradescope} disabled={!gsUrl.trim()} style={{flex:2,padding:'11px 0',borderRadius:40,background:!gsUrl.trim()?'#E5E7EB':'#E8222F',color:!gsUrl.trim()?'var(--text3)':'#fff',fontSize:13,fontWeight:700}}>
+                Connect
+              </button>
+            </div>
+          </div>
+        )}
+        {gsConn && (
+          <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+            <span style={{fontSize:13,fontWeight:700,color:'var(--green)'}}>✓ Connected</span>
+            <span title={integrations.gradescope&&integrations.gradescope.icsUrl} style={{fontSize:12,color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:200}}>
+              {integrations.gradescope&&integrations.gradescope.icsUrl}
+            </span>
+            <button onClick={function(){save('gradescope',null);}} style={{marginLeft:'auto',fontSize:12,color:'var(--red)',fontWeight:600}}>Disconnect</button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Course Websites (multiple) ─────────────────────── */}
+      <div className="integ-card">
+        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:14}}>
+          <div className="integ-icon" style={{background:'#EBF3FE',color:'#2563EB',fontSize:20}}>↗</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:15,fontWeight:700}}>Course Websites</div>
+            <div style={{fontSize:12,color:'var(--text3)',marginTop:1}}>Add any course calendar feed — you can add multiple</div>
+          </div>
+          {courseWebs.length>0 && <div style={{width:10,height:10,borderRadius:'50%',background:'var(--green)',flexShrink:0}} />}
+        </div>
+
+        {courseWebs.length>0 && (
+          <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:12}}>
+            {courseWebs.map(function(cw){
+              return (
+                <div key={cw.id} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 12px',background:'var(--bg)',borderRadius:12}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:13,fontWeight:700,color:'var(--navy)'}}>{cw.name}</div>
+                    <div title={cw.icsUrl} style={{fontSize:11,color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{cw.icsUrl}</div>
+                  </div>
+                  <button onClick={function(){removeCourseWeb(cw.id);}} style={{fontSize:11,color:'var(--red)',fontWeight:600}}>Remove</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!cwOpen && (
+          <button onClick={function(){setCwOpen(true);}} style={{padding:'11px 22px',borderRadius:40,background:'#2563EB',color:'#fff',fontSize:13,fontWeight:700}}>
+            {courseWebs.length>0?'Add Another Course':'Add Course Website'}
+          </button>
+        )}
+        {cwOpen && (
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            <Field label="Course name / tag">
+              <input type="text" value={cwName} autoFocus onChange={function(e){setCwName(e.target.value);}} placeholder="CS 341" style={{fontSize:14}} />
+            </Field>
+            <Field label="Calendar URL (.ics)">
+              <input type="url" value={cwUrl} onChange={function(e){setCwUrl(e.target.value);}} placeholder="https://courses.cs.washington.edu/…/schedule.ics" style={{fontSize:14}} />
+            </Field>
+            <p style={{fontSize:11,color:'var(--text3)',lineHeight:1.6}}>Paste the .ics link from any course site. Most schedule pages publish one — look for "Subscribe" or "Calendar Feed".</p>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={function(){setCwOpen(false);setCwName('');setCwUrl('');}} style={{flex:1,padding:'11px 0',borderRadius:40,background:'var(--bg)',fontSize:13,fontWeight:600,color:'var(--text2)'}}>Cancel</button>
+              <button onClick={addCourseWeb} disabled={!cwUrl.trim()} style={{flex:2,padding:'11px 0',borderRadius:40,background:!cwUrl.trim()?'#E5E7EB':'#2563EB',color:!cwUrl.trim()?'var(--text3)':'#fff',fontSize:13,fontWeight:700}}>
+                Add &amp; Import
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div style={{padding:16,background:'var(--card)',borderRadius:'18px',border:'1px dashed rgba(0,0,0,.1)'}}>
+        <p style={{fontSize:12,color:'var(--text3)',lineHeight:1.7}}>
+          <strong style={{color:'var(--text2)'}}>How it works:</strong> TaskFlow fetches each iCal feed through a secure serverless proxy (no CORS issues), parses the events, and merges them into your task list. Duplicates (same title + same due date) across sources are collapsed automatically. The app auto-syncs every 6 hours.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── CALENDAR VIEW ──────────────────────────────────────── */
+var CAL_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+var CAL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function CalendarView({ tasks, onSelectDay }) {
+  var today = new Date();
+  var [yr,  setYr]  = useState(today.getFullYear());
+  var [mon, setMon] = useState(today.getMonth()); // 0-indexed
+  var [sel, setSel] = useState(null);
+
+  /* Build calendar grid */
+  var firstDay  = new Date(yr, mon, 1).getDay(); // 0=Sun
+  var daysInMon = new Date(yr, mon + 1, 0).getDate();
+  var daysInPrev= new Date(yr, mon, 0).getDate();
+  var todayISO2 = today.toISOString().slice(0,10);
+
+  /* Map tasks to date keys */
+  var tasksByDate = {};
+  tasks.forEach(function(t){
+    if (!t.dueDate) return;
+    if (!tasksByDate[t.dueDate]) tasksByDate[t.dueDate] = [];
+    tasksByDate[t.dueDate].push(t);
+  });
+
+  function isoOf(y,m,d){
+    return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  }
+
+  function selectDay(iso){
+    var next = sel===iso ? null : iso;
+    setSel(next);
+    onSelectDay(next);
+  }
+
+  function prevMon(){ if(mon===0){setMon(11);setYr(function(y){return y-1;});}else setMon(function(m){return m-1;}); }
+  function nextMon(){ if(mon===11){setMon(0);setYr(function(y){return y+1;});}else setMon(function(m){return m+1;}); }
+
+  /* Cells: leading grey + current + trailing grey */
+  var cells = [];
+  for (var i=0; i<firstDay; i++) {
+    cells.push({iso: isoOf(yr, mon-1, daysInPrev-firstDay+1+i), day: daysInPrev-firstDay+1+i, other:true});
+  }
+  for (var d=1; d<=daysInMon; d++) {
+    cells.push({iso: isoOf(yr, mon, d), day: d, other:false});
+  }
+  var trailing = 42 - cells.length;
+  for (var j=1; j<=trailing; j++) {
+    cells.push({iso: isoOf(yr, mon+1, j), day: j, other:true});
+  }
+
+  var srcClr = {gradescope:'#E8222F', canvas:'#E13F29', courseweb:'#2563EB', manual:'#5A67D8'};
+
+  return (
+    <div className="a-fade">
+      {/* Month header */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
+        <button onClick={prevMon} style={{width:36,height:36,borderRadius:12,background:'var(--card)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>‹</button>
+        <div style={{textAlign:'center'}}>
+          <div style={{fontSize:20,fontWeight:800,color:'var(--navy)'}}>{CAL_MONTHS[mon]}</div>
+          <div style={{fontSize:13,color:'var(--text3)'}}>{yr}</div>
+        </div>
+        <button onClick={nextMon} style={{width:36,height:36,borderRadius:12,background:'var(--card)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>›</button>
+      </div>
+
+      {/* Day-of-week headers */}
+      <div className="cal-grid" style={{marginBottom:6}}>
+        {CAL_DAYS.map(function(d){
+          return <div key={d} style={{textAlign:'center',fontSize:11,fontWeight:700,color:'var(--text3)',padding:'4px 0'}}>{d}</div>;
+        })}
+      </div>
+
+      {/* Day cells */}
+      <div className="cal-grid">
+        {cells.map(function(cell){
+          var ts = tasksByDate[cell.iso] || [];
+          var isToday   = cell.iso === todayISO2;
+          var isSelected= cell.iso === sel;
+          var hasDue    = ts.filter(function(t){return !t.completed;}).length > 0;
+          var hasOver   = ts.some(function(t){return !t.completed && t.dueDate < todayISO2;});
+          return (
+            <div
+              key={cell.iso}
+              className={'cal-day'+(isToday?' today':'')+(isSelected?' selected':'')+(cell.other?' other-month':'')}
+              onClick={function(){selectDay(cell.iso);}}
+            >
+              <div className="cal-day-num" style={{
+                color: isSelected?'#fff' : isToday?'var(--navy)' : hasOver?'var(--red)' : 'var(--text)',
+              }}>{cell.day}</div>
+              {ts.length>0 && (
+                <div className="cal-dot-row">
+                  {ts.slice(0,6).map(function(t,i){
+                    var clr = t.completed?'#D1D5DB':(srcClr[t.source]||'var(--blue)');
+                    return <div key={i} className="cal-dot" style={{background:isSelected?'rgba(255,255,255,.6)':clr}} />;
+                  })}
+                  {ts.length>6 && <div style={{fontSize:9,color:isSelected?'rgba(255,255,255,.7)':'var(--text3)',lineHeight:'7px'}}>+{ts.length-6}</div>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div style={{display:'flex',gap:16,marginTop:16,flexWrap:'wrap'}}>
+        {[
+          {label:'Gradescope', clr:'#E8222F'},
+          {label:'Canvas',     clr:'#E13F29'},
+          {label:'Course site',clr:'#2563EB'},
+          {label:'Manual',     clr:'#5A67D8'},
+          {label:'Completed',  clr:'#D1D5DB'},
+        ].map(function(x){
+          return (
+            <div key={x.label} style={{display:'flex',alignItems:'center',gap:5}}>
+              <div style={{width:8,height:8,borderRadius:'50%',background:x.clr}} />
+              <span style={{fontSize:11,color:'var(--text3)'}}>{x.label}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {sel && (
+        <div style={{marginTop:20}}>
+          <div style={{fontSize:13,fontWeight:700,color:'var(--text2)',marginBottom:10}}>
+            {new Date(sel+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}
+          </div>
+          {(tasksByDate[sel]||[]).length===0 ? (
+            <div style={{color:'var(--text3)',fontSize:13}}>No tasks due this day.</div>
+          ) : (tasksByDate[sel]||[]).map(function(t){
+            return (
+              <div key={t.id} style={{
+                display:'flex',alignItems:'center',gap:10,padding:'10px 14px',
+                background:'var(--card)',borderRadius:12,marginBottom:8,
+              }}>
+                <div style={{width:8,height:8,borderRadius:'50%',flexShrink:0,background:srcClr[t.source]||'var(--blue)'}} />
+                <span style={{flex:1,fontSize:13,fontWeight:600,color:t.completed?'var(--text3)':'var(--text)',textDecoration:t.completed?'line-through':'none'}}>{t.title}</span>
+                {t.dueTime && <span style={{fontSize:11,color:'var(--text3)'}}>{t.dueTime}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── AUTH SCREEN ────────────────────────────────────────── */
+function AuthModal({ onAuth, configured }) {
+  var [err,setErr]   = useState('');
+  var [busy,setBusy] = useState(false);
+  /* Detect system dark preference so auth screen matches app default */
+  var sysDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+  function friendlyErr(e) {
+    return e.code === 'auth/popup-closed-by-user'    ? '' :
+           e.code === 'auth/cancelled-popup-request' ? '' :
+           e.message || 'Something went wrong. Try again.';
+  }
+
+  async function signInWithGoogle() {
+    setBusy(true); setErr('');
+    try {
+      var provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      var result = await window.__FB_AUTH.signInWithPopup(provider);
+      onAuth(result.user);
+    } catch(e) { var msg = friendlyErr(e); if (msg) setErr(msg); }
+    setBusy(false);
+  }
+
+  async function signInWithApple() {
+    setBusy(true); setErr('');
+    try {
+      var provider = new firebase.auth.OAuthProvider('apple.com');
+      provider.addScope('email'); provider.addScope('name');
+      var result = await window.__FB_AUTH.signInWithPopup(provider);
+      onAuth(result.user);
+    } catch(e) { var msg = friendlyErr(e); if (msg) setErr(msg); }
+    setBusy(false);
+  }
+
+  var bg      = sysDark ? '#0C0E14' : '#EAEAEB';
+  var textPri = sysDark ? '#E8ECF0' : '#0D1117';
+  var textSub = sysDark ? 'rgba(255,255,255,.36)' : 'rgba(13,17,23,.40)';
+
+  var screenStyle = {
+    position:'fixed', inset:0,
+    background:bg,
+    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+    fontFamily:"'Inter',-apple-system,sans-serif",
+    overflow:'hidden',
+  };
+
+  if (!configured) {
+    return (
+      <div style={screenStyle}>
+        <div style={{textAlign:'center',maxWidth:340,width:'calc(100% - 48px)',padding:'0 4px'}}>
+          <div style={{fontSize:40,marginBottom:14}}>⚙️</div>
+          <h2 style={{fontSize:20,fontWeight:800,color:textPri,marginBottom:10,letterSpacing:'-.3px'}}>Setup Required</h2>
+          <p style={{fontSize:13,color:textSub,lineHeight:1.8,marginBottom:24}}>
+            Add <strong style={{color:textPri}}>FIREBASE_API_KEY</strong>, <strong style={{color:textPri}}>FIREBASE_AUTH_DOMAIN</strong>, <strong style={{color:textPri}}>FIREBASE_PROJECT_ID</strong>, and <strong style={{color:textPri}}>FIREBASE_APP_ID</strong> to your Vercel env vars, then redeploy.
+          </p>
+          <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer"
+            style={{display:'inline-block',padding:'13px 28px',borderRadius:100,background:'#0D1117',color:'#fff',fontSize:14,fontWeight:700,textDecoration:'none'}}>
+            Open Firebase Console →
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={screenStyle}>
+      <div style={{
+        width:'calc(100% - 40px)', maxWidth:360,
+        textAlign:'center',
+        display:'flex', flexDirection:'column', alignItems:'center',
+      }}>
+
+        {/* App icon — matches sidebar */}
+        <div style={{
+          width:88,height:88,borderRadius:22,flexShrink:0,
+          background:'#0D1117',
+          display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',
+          marginBottom:22,
+          boxShadow:'0 4px 24px rgba(0,0,0,.18)',
+        }}>
+          <svg width="36" height="36" viewBox="0 0 16 16" fill="none">
+            <path d="M2.5 5h11M2.5 8h11M2.5 11h7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/>
+          </svg>
+        </div>
+
+        {/* Name */}
+        <div style={{fontSize:42,fontWeight:800,color:textPri,letterSpacing:'-.8px',marginBottom:8,lineHeight:1}}>
+          TaskFlow
+        </div>
+        <p style={{fontSize:15,color:textSub,marginBottom:48,fontWeight:400}}>
+          Your assignment tracker
+        </p>
+
+        {/* Google */}
+        <button
+          onClick={signInWithGoogle} disabled={busy}
+          style={{
+            width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+            padding:'15px 20px', borderRadius:100, marginBottom:10,
+            background:'#fff',
+            border:'1px solid rgba(0,0,0,.08)',
+            fontSize:15, fontWeight:600, color:'#0D1117',
+            boxShadow:'0 1px 4px rgba(0,0,0,.08)',
+            opacity:busy?0.6:1, cursor:busy?'default':'pointer',
+            transition:'opacity .15s, transform .1s',
+          }}
+          onMouseEnter={function(e){e.currentTarget.style.transform='translateY(-1px)';}}
+          onMouseLeave={function(e){e.currentTarget.style.transform='translateY(0)';}}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18" style={{flexShrink:0}}>
+            <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+            <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+            <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/>
+          </svg>
+          Sign in with Google
+        </button>
+
+        {/* Apple */}
+        <button
+          onClick={signInWithApple} disabled={busy}
+          style={{
+            width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+            padding:'15px 20px', borderRadius:100, marginBottom:32,
+            background:'#0D1117',
+            border:'none',
+            fontSize:15, fontWeight:600, color:'#fff',
+            boxShadow:'0 1px 4px rgba(0,0,0,.14)',
+            opacity:busy?0.6:1, cursor:busy?'default':'pointer',
+            transition:'opacity .15s, transform .1s',
+          }}
+          onMouseEnter={function(e){e.currentTarget.style.transform='translateY(-1px)';}}
+          onMouseLeave={function(e){e.currentTarget.style.transform='translateY(0)';}}
+        >
+          <span style={{fontSize:17,lineHeight:1,flexShrink:0}}>{ICO.apple}</span>
+          Sign in with Apple
+        </button>
+
+        {/* Error */}
+        {err && (
+          <div style={{
+            padding:'10px 14px', borderRadius:12, marginBottom:16, width:'100%',
+            background:'rgba(185,28,28,.08)', border:'1px solid rgba(185,28,28,.18)',
+            color:'#B91C1C', fontSize:13, fontWeight:600,
+          }}>
+            {err}
+          </div>
+        )}
+
+        {/* Footer */}
+        <p style={{fontSize:12,color:textSub,lineHeight:1.7}}>
+          Sign in to track your assignments across devices
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SETTINGS PANEL ────────────────────────────────────── */
+/* ─── SETTINGS PAGE (inline view) ───────────────────────── */
+function SettingsPage({ user, displayName, onSaveName, darkMode, onToggleDark, onLogout }) {
+  var [nameVal,setNameVal] = useState(displayName||'');
+  var [saving,setSaving]   = useState(false);
+  var [saved,setSaved]     = useState(false);
+
+  async function saveName() {
+    if (!nameVal.trim()||nameVal.trim()===displayName) return;
+    setSaving(true);
+    await onSaveName(nameVal.trim());
+    setSaving(false); setSaved(true);
+    setTimeout(function(){setSaved(false);},2000);
+  }
+
+  var initial = (displayName||user.email||'U')[0].toUpperCase();
+
+  return (
+    <div style={{maxWidth:560,margin:'0 auto',padding:'4px 0 60px'}}>
+
+      {/* Profile */}
+      <div style={{marginBottom:28}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.7px',marginBottom:14}}>Profile</div>
+        <div style={{background:'var(--card)',borderRadius:18,boxShadow:'var(--sh)',overflow:'hidden'}}>
+          {/* Avatar row */}
+          <div style={{display:'flex',alignItems:'center',gap:16,padding:'20px 20px 16px'}}>
+            <div style={{
+              width:56,height:56,borderRadius:18,flexShrink:0,
+              background:'linear-gradient(135deg,#667eea,#764ba2)',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              color:'#fff',fontSize:22,fontWeight:800,
+            }}>
+              {initial}
+            </div>
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:16,fontWeight:800,color:'var(--navy)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{displayName||'Set your name'}</div>
+              <div style={{fontSize:13,color:'var(--text3)',marginTop:3,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.email}</div>
+            </div>
+          </div>
+          <div style={{height:1,background:'var(--border)',margin:'0 20px'}} />
+          {/* Name edit */}
+          <div style={{padding:'16px 20px 20px'}}>
+            <label style={{fontSize:12,fontWeight:600,color:'var(--text2)',display:'block',marginBottom:8}}>Display name</label>
+            <div style={{display:'flex',gap:8}}>
+              <input
+                type="text" value={nameVal}
+                onChange={function(e){setNameVal(e.target.value);setSaved(false);}}
+                onKeyDown={function(e){if(e.key==='Enter')saveName();}}
+                placeholder="Your name"
+                style={{
+                  flex:1,padding:'11px 14px',borderRadius:12,fontSize:14,fontWeight:500,
+                  background:'var(--bg)',border:'1.5px solid var(--border)',color:'var(--text)',
+                }}
+              />
+              <button
+                onClick={saveName}
+                disabled={!nameVal.trim()||saving}
+                style={{
+                  padding:'11px 18px',borderRadius:12,fontSize:13,fontWeight:700,flexShrink:0,
+                  background:saved?'var(--green)':(!nameVal.trim()||saving)?'var(--bg)':'var(--navy)',
+                  color:(!nameVal.trim()||saving)?'var(--text3)':'#fff',
+                }}
+              >
+                {saved?'✓ Saved':saving?'…':'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Appearance */}
+      <div style={{marginBottom:28}}>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.7px',marginBottom:14}}>Appearance</div>
+        <div style={{background:'var(--card)',borderRadius:18,boxShadow:'var(--sh)'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'18px 20px'}}>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              <div style={{width:36,height:36,borderRadius:10,background:darkMode?'#1e2a3a':'#FFF8E6',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>
+                {darkMode?'🌙':'☀️'}
+              </div>
+              <div>
+                <div style={{fontSize:14,fontWeight:700,color:'var(--navy)'}}>Dark Mode</div>
+                <div style={{fontSize:12,color:'var(--text3)',marginTop:1}}>Easy on the eyes at night</div>
+              </div>
+            </div>
+            <Toggle on={darkMode} onChange={onToggleDark} />
+          </div>
+        </div>
+      </div>
+
+      {/* Account */}
+      <div>
+        <div style={{fontSize:11,fontWeight:700,color:'var(--text3)',textTransform:'uppercase',letterSpacing:'.7px',marginBottom:14}}>Account</div>
+        <div style={{background:'var(--card)',borderRadius:18,boxShadow:'var(--sh)',overflow:'hidden'}}>
+          <div style={{padding:'18px 20px',borderBottom:'1px solid var(--border)'}}>
+            <div style={{fontSize:11,color:'var(--text3)',marginBottom:4,fontWeight:600,textTransform:'uppercase',letterSpacing:'.5px'}}>Signed in as</div>
+            <div style={{fontSize:15,fontWeight:700,color:'var(--navy)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.email}</div>
+          </div>
+          <button
+            onClick={onLogout}
+            style={{
+              width:'100%',padding:'16px 20px',
+              display:'flex',alignItems:'center',gap:12,
+              fontSize:15,fontWeight:700,color:'var(--red)',textAlign:'left',
+              background:'transparent',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 14H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h3M10.5 11.5L14 8l-3.5-3.5M14 8H6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            Log Out
+          </button>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+/* ─── SIDEBAR ────────────────────────────────────────────── */
+var NAV = [
+  {id:'today',    label:'Today',     ico:ICO.today},
+  {id:'upcoming', label:'Upcoming',  ico:ICO.upcoming},
+  {id:'all',      label:'All Tasks', ico:ICO.all},
+  {id:'calendar', label:'Calendar',  ico:ICO.cal},
+  {id:'completed',label:'Completed', ico:ICO.done},
+];
+
+function Sidebar({ view, setView, tasks, integrations, displayName, userEmail }) {
+  var done = tasks.filter(function(t){return t.completed;}).length;
+  var pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
+  var overdue = tasks.filter(function(t){return !t.completed&&t.dueDate&&t.dueDate<todayISO();}).length;
+  var todayCt = tasks.filter(function(t){return !t.completed&&t.dueDate===todayISO();}).length;
+  var urgBadge = overdue+todayCt;
+  var initial = (displayName||userEmail||'U')[0].toUpperCase();
+
+  return (
+    <div className="sidebar">
+      {/* Logo — click to go home */}
+      <button
+        onClick={function(){setView('today');}}
+        style={{
+          display:'flex',alignItems:'center',gap:10,paddingBottom:20,flexShrink:0,
+          background:'transparent',borderRadius:10,textAlign:'left',
+        }}
+      >
+        <div style={{
+          width:32,height:32,borderRadius:10,flexShrink:0,
+          background:'#0D1117',
+          display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',
+        }}>
+          {ICO.all}
+        </div>
+        <span style={{fontSize:16,fontWeight:800,letterSpacing:'-.4px',color:'var(--text)'}}>TaskFlow</span>
+      </button>
+
+      {/* Scrollable nav area */}
+      <div className="sidebar-nav">
+        {NAV.map(function(n){
+          var active = view===n.id;
+          return (
+            <button
+              key={n.id}
+              className={'nav-btn'+(active?' active':'')}
+              onClick={function(){setView(n.id);}}
+            >
+              <span style={{display:'flex',opacity:active?1:.7}}>{n.ico}</span>
+              <span style={{flex:1}}>{n.label}</span>
+              {n.id==='today'&&urgBadge>0 && (
+                <span style={{
+                  fontSize:11,fontWeight:700,background:'var(--red)',color:'#fff',
+                  borderRadius:20,padding:'2px 7px',
+                }}>
+                  {urgBadge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        <div className="divider" style={{margin:'10px 0 12px'}} />
+
+        <button
+          className={'nav-btn'+(view==='integrations'?' active':'')}
+          onClick={function(){setView('integrations');}}
+        >
+          <span style={{display:'flex',opacity:view==='integrations'?1:.7}}>{ICO.link}</span>
+          <span style={{flex:1}}>Integrations</span>
+          <div style={{display:'flex',flexDirection:'row',gap:4,alignItems:'center',flexShrink:0}}>
+            {integrations.gradescope&&<div style={{width:7,height:7,borderRadius:'50%',background:'#E8222F',flexShrink:0}} />}
+            {integrations.canvas&&<div style={{width:7,height:7,borderRadius:'50%',background:'#2563EB',flexShrink:0}} />}
+            {integrations.courseWebs&&integrations.courseWebs.length>0&&<div style={{width:7,height:7,borderRadius:'50%',background:'#16A34A',flexShrink:0}} />}
+          </div>
+        </button>
+
+        <button
+          className={'nav-btn'+(view==='settings'?' active':'')}
+          onClick={function(){setView('settings');}}
+        >
+          <span style={{display:'flex',opacity:view==='settings'?1:.7}}>{ICO.settings}</span>
+          <span style={{flex:1}}>Settings</span>
+        </button>
+      </div>
+
+      {/* Pinned bottom — progress + user display */}
+      <div className="sidebar-bottom">
+        {/* User avatar card — clicks to settings */}
+        <button
+          onClick={function(){setView('settings');}}
+          style={{
+            padding:'10px 12px',display:'flex',alignItems:'center',gap:8,
+            borderRadius:12,background:'var(--bg)',width:'100%',textAlign:'left',
+            transition:'background .15s',
+          }}
+        >
+          <div style={{
+            width:28,height:28,borderRadius:8,flexShrink:0,
+            background:'linear-gradient(135deg,#667eea,#764ba2)',
+            display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:12,fontWeight:700,
+          }}>
+            {initial}
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:12,fontWeight:700,color:'var(--navy)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{displayName||userEmail||'Account'}</div>
+            <div style={{fontSize:10,color:'var(--text3)'}}>Settings &amp; profile</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MOBILE DRAWER NAV ──────────────────────────────────── */
+var MOB_NAV = [
+  {id:'today',        label:'Today',        ico:ICO.today},
+  {id:'upcoming',     label:'Upcoming',     ico:ICO.upcoming},
+  {id:'all',          label:'All Tasks',    ico:ICO.all},
+  {id:'calendar',     label:'Calendar',     ico:ICO.cal},
+  {id:'integrations', label:'Integrations', ico:ICO.link},
+  {id:'completed',    label:'Completed',    ico:ICO.done},
+  {id:'settings',     label:'Settings',     ico:ICO.settings},
+];
+
+function MobileDrawer({ open, onClose, view, setView, tasks, displayName, userEmail, urgBadge }) {
+  var done  = tasks.filter(function(t){ return t.completed; }).length;
+  var total = tasks.length;
+  var pct   = total ? Math.round(done/total*100) : 0;
+
+  function go(id) { setView(id); onClose(); }
+
+  return (
+    <React.Fragment>
+      {/* Overlay */}
+      <div
+        className={'mob-drawer-overlay'+(open?' open':'')}
+        onClick={onClose}
+      />
+      {/* Drawer panel */}
+      <div className={'mob-drawer'+(open?' open':'')}>
+        {/* Logo */}
+        <button
+          onClick={function(){go('today');}}
+          style={{display:'flex',alignItems:'center',gap:10,marginBottom:28,paddingLeft:4}}
+        >
+          <div style={{
+            width:34,height:34,borderRadius:10,
+            background:'#0D1117',color:'#fff',
+            display:'flex',alignItems:'center',justifyContent:'center',
+          }}>{ICO.all}</div>
+          <span style={{fontSize:17,fontWeight:800,color:'var(--text)',letterSpacing:'-.3px'}}>TaskFlow</span>
+        </button>
+
+        {/* Nav items */}
+        {MOB_NAV.map(function(n){
+          var active = view===n.id;
+          return (
+            <button
+              key={n.id}
+              className={'nav-btn'+(active?' active':'')}
+              onClick={function(){go(n.id);}}
+            >
+              <span style={{display:'flex',opacity:active?1:.7}}>{n.ico}</span>
+              {n.label}
+              {n.id==='today'&&urgBadge>0&&(
+                <span style={{
+                  marginLeft:'auto',minWidth:18,height:18,borderRadius:9,
+                  background:'var(--red)',color:'#fff',
+                  fontSize:10,fontWeight:800,
+                  display:'flex',alignItems:'center',justifyContent:'center',padding:'0 5px',
+                }}>
+                  {urgBadge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        {/* Progress */}
+        <div style={{marginTop:'auto',paddingTop:32}}>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+            <span style={{fontSize:11,fontWeight:600,color:'var(--text3)'}}>Progress</span>
+            <span style={{fontSize:11,fontWeight:700,color:'var(--green)'}}>{pct}%</span>
+          </div>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{width:pct+'%'}} />
+          </div>
+          <div style={{
+            marginTop:16,padding:'10px 12px',borderRadius:12,
+            background:'var(--bg)',display:'flex',alignItems:'center',gap:10,
+          }}>
+            <div style={{
+              width:30,height:30,borderRadius:'50%',
+              background:'var(--navy)',color:'#fff',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:12,fontWeight:700,flexShrink:0,
+            }}>
+              {(displayName||'?')[0].toUpperCase()}
+            </div>
+            <div style={{minWidth:0}}>
+              <div style={{fontSize:12,fontWeight:600,color:'var(--text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                {displayName||'User'}
+              </div>
+              <div style={{fontSize:10,color:'var(--text3)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                {userEmail||''}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
+/* ─── MAIN APP ───────────────────────────────────────────── */
+function App() {
+  /* ── Firebase auth state ── */
+  var [fbConfig,setFbConfig]   = useState(null);
+  var [session,setSession]     = useState(undefined);
+  var [userId,setUserId]       = useState(null);
+  var [displayName,setDisplayName] = useState('');
+  var [darkMode,setDarkMode]   = useState(function(){return localStorage.getItem('tf-dark')==='1';});
+
+  /* ── Task & integration state ── */
+  var [tasks,setTasks] = useState(function(){
+    try{ var s=localStorage.getItem('tf3-tasks'); return s?JSON.parse(s):SAMPLE; }catch(e){return SAMPLE;}
+  });
+  var [integrations,setIntegrations] = useState(function(){
+    try{
+      var s=localStorage.getItem('tf3-integ');
+      var v = s?JSON.parse(s):{};
+      if (!v.courseWebs) v.courseWebs = [];
+      return v;
+    }catch(e){return {courseWebs:[]};}
+  });
+  var [syncStatus,setSyncStatus] = useState({ running:false, message:'', error:false });
+  var [view,setView]           = useState('today');
+  var [selectedId,setSelectedId] = useState(null);
+  var [nlp,setNlp]             = useState(null);
+  var [search,setSearch]       = useState('');
+  var [searchOpen,setSearchOpen] = useState(false);
+  var [dayFilter,setDayFilter] = useState(null);
+  var [drawerOpen,setDrawerOpen] = useState(false);
+
+  /* ── Boot: fetch Firebase config, init SDK, listen for auth ── */
+  useEffect(function(){
+    fetch('/api/config').then(function(r){return r.json();}).then(function(cfg){
+      setFbConfig(cfg);
+      if (cfg.configured && window.firebase) {
+        // Avoid double-init on hot reload
+        var app = firebase.apps.length
+          ? firebase.apps[0]
+          : firebase.initializeApp({
+              apiKey:     cfg.apiKey,
+              authDomain: cfg.authDomain,
+              projectId:  cfg.projectId,
+              appId:      cfg.appId,
+            });
+        var auth = app.auth();
+        var db   = app.firestore();
+        window.__FB_AUTH = auth;
+        window.__FB_DB   = db;
+        // onAuthStateChanged fires immediately with current user (or null)
+        auth.onAuthStateChanged(function(user){
+          setSession(user || null);
+          if (user) { setUserId(user.uid); loadUserData(db, user.uid, user); }
+          else      { setUserId(null); }
+        });
+      } else {
+        setSession(null); // Firebase not configured — local/guest mode
+      }
+    }).catch(function(){ setFbConfig({configured:false}); setSession(null); });
+  }, []);
+
+  /* ── Dark mode: apply to document ── */
+  useEffect(function(){
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+    try { localStorage.setItem('tf-dark', darkMode ? '1' : '0'); } catch(e){}
+    // Persist to Firestore if logged in
+    if (window.__FB_DB && userId) {
+      window.__FB_DB.collection('users').doc(userId).collection('profile').doc('main')
+        .set({ darkMode: darkMode }, { merge: true }).catch(function(){});
+    }
+  }, [darkMode, userId]);
+
+  /* ── Load user data from Firestore ── */
+  async function loadUserData(db, uid, authUser) {
+    try {
+      var userRef  = db.collection('users').doc(uid);
+      var [tasksSnap, integSnap, profileSnap] = await Promise.all([
+        userRef.collection('tasks').get(),
+        userRef.collection('integrations').doc('main').get(),
+        userRef.collection('profile').doc('main').get(),
+      ]);
+      if (!tasksSnap.empty) {
+        setTasks(tasksSnap.docs.map(function(d){ return d.data(); }));
+      }
+      if (integSnap.exists) {
+        var v = integSnap.data();
+        if (!v.courseWebs) v.courseWebs = [];
+        setIntegrations(v);
+      }
+      if (profileSnap.exists && profileSnap.data().displayName) {
+        var p = profileSnap.data();
+        setDisplayName(p.displayName);
+        if (typeof p.darkMode === 'boolean') setDarkMode(p.darkMode);
+      } else {
+        /* Use first name from Google/Apple account as default */
+        var authName = authUser && (authUser.displayName || '');
+        if (authName) setDisplayName(authName.split(' ')[0]);
+      }
+    } catch(e) { console.warn('loadUserData failed', e); }
+  }
+
+  /* ── Save display name to Firestore ── */
+  async function saveDisplayName(name) {
+    setDisplayName(name);
+    if (window.__FB_DB && userId) {
+      await window.__FB_DB.collection('users').doc(userId).collection('profile').doc('main')
+        .set({ displayName: name }, { merge: true });
+    }
+  }
+
+  /* ── Persist tasks → localStorage + Firestore ── */
+  useEffect(function(){
+    try{localStorage.setItem('tf3-tasks',JSON.stringify(tasks));}catch(e){}
+    if (!window.__FB_DB || !userId) return;
+    var db  = window.__FB_DB;
+    var col = db.collection('users').doc(userId).collection('tasks');
+    var batch = db.batch();
+    tasks.forEach(function(t){ batch.set(col.doc(t.id), t); });
+    batch.commit().catch(function(e){ console.warn('tasks sync failed', e); });
+  }, [tasks, userId]);
+
+  /* ── Persist integrations → localStorage + Firestore ── */
+  useEffect(function(){
+    try{localStorage.setItem('tf3-integ',JSON.stringify(integrations));}catch(e){}
+    if (!window.__FB_DB || !userId) return;
+    window.__FB_DB.collection('users').doc(userId).collection('integrations')
+      .doc('main').set(integrations)
+      .catch(function(e){ console.warn('integrations sync failed', e); });
+  }, [integrations, userId]);
+
+  useEffect(function(){askNotif();},[]);
+  useEffect(function(){
+    var iv = setInterval(function(){
+      if(anyIntegrationConnected(integrations)) doSync();
+    },6*3600000);
+    return function(){clearInterval(iv);};
+  },[integrations]);
+
+  var selectedTask = useMemo(function(){
+    return tasks.find(function(t){return t.id===selectedId;})||null;
+  },[tasks,selectedId]);
+
+  var sections = useMemo(function(){
+    var list = tasks;
+    if (search) {
+      var q = search.toLowerCase();
+      list = list.filter(function(t){
+        return t.title.toLowerCase().includes(q)||(t.desc&&t.desc.toLowerCase().includes(q))||(t.tags&&t.tags.some(function(tg){return tg.toLowerCase().includes(q);}));
+      });
+    }
+    if (dayFilter) {
+      list = list.filter(function(t){return t.dueDate===dayFilter;});
+    } else {
+      if (view==='today')    list=list.filter(function(t){return !t.completed&&t.dueDate&&t.dueDate<=todayISO();});
+      if (view==='upcoming') list=list.filter(function(t){return !t.completed&&(!t.dueDate||t.dueDate>todayISO());});
+      if (view==='completed') list=list.filter(function(t){return t.completed;});
+    }
+
+    if (view==='completed'||dayFilter) return [{title:dayFilter?('Tasks for '+friendlyDate(dayFilter,null)):'Completed',tasks:list}];
+
+    var buckets = {Overdue:[],Today:[],  'This Week':[],Later:[],Someday:[]};
+    list.forEach(function(t){var s=sectionFor(t.dueDate);if(buckets[s])buckets[s].push(t);});
+    var ORDER=['Overdue','Today','This Week','Later','Someday'];
+    return ORDER.reduce(function(acc,k){
+      if(buckets[k]&&buckets[k].length){
+        buckets[k].sort(function(a,b){return(a.dueDate||'z')>(b.dueDate||'z')?1:-1;});
+        acc.push({title:k,tasks:buckets[k]});
+      }
+      return acc;
+    },[]);
+  },[tasks,view,search,dayFilter]);
+
+  function handleAdd(raw) { setNlp({input:raw,parsed:parseNLP(raw)}); }
+
+  function confirmAdd(data) {
+    var task = {
+      id:uid(),title:data.title,desc:'',dueDate:data.dueDate,dueTime:data.dueTime,
+      reminder:data.reminder,reminderOffset:data.reminderOffset||60,
+      recurring:false,recurringType:null,completed:false,source:'manual',tags:[],
+    };
+    setTasks(function(p){return [task].concat(p);});
+    scheduleNotif(task);
+    setNlp(null);
+  }
+
+  function updateTask(updated) {
+    setTasks(function(p){return p.map(function(t){return t.id===updated.id?updated:t;});});
+  }
+  function deleteTask(id) {
+    setTasks(function(p){return p.filter(function(t){return t.id!==id;});});
+    if(selectedId===id) setSelectedId(null);
+  }
+  function toggleTask(id,val) {
+    setTasks(function(p){return p.map(function(t){return t.id===id?{...t,completed:val}:t;});});
+  }
+  function selectTask(id) {
+    setSelectedId(function(p){return p===id?null:id;});
+  }
+  /* Update a single integration slot (gradescope / canvas / courseWebs). */
+  function updateInteg(kind, value) {
+    setIntegrations(function(p){
+      var next = {...p};
+      if (value === null || value === undefined) delete next[kind];
+      else next[kind] = value;
+      if (!next.courseWebs) next.courseWebs = [];
+      return next;
+    });
+  }
+
+  /* Merge newly fetched tasks into state with dedup.
+   * Dedup key = normalizedTitle + '|' + dueDate. Manual tasks are never overwritten. */
+  function mergeImported(incoming) {
+    if (!incoming || !incoming.length) return;
+    setTasks(function(prev){
+      var index = {};
+      prev.forEach(function(t){
+        var k = normalizeKey(t.title) + '|' + (t.dueDate||'');
+        index[k] = t;
+      });
+      var additions = [];
+      incoming.forEach(function(t){
+        var k = normalizeKey(t.title) + '|' + (t.dueDate||'');
+        if (index[k]) return; // duplicate — skip
+        index[k] = t;
+        additions.push({
+          id:uid(),
+          title:t.title, desc:t.desc||'',
+          dueDate:t.dueDate, dueTime:t.dueTime||null,
+          reminder:true, reminderOffset:60,
+          recurring:!!t.recurring, recurringType:t.recurringType||null,
+          completed:false, source:t.source,
+          tags:t.tags||[], externalId:t.externalId||null,
+        });
+      });
+      return prev.concat(additions);
+    });
+  }
+
+  async function doSync() {
+    if (!anyIntegrationConnected(integrations)) return;
+    setSyncStatus({ running:true, message:'', error:false });
+
+    var imported = [];
+    var errors   = [];
+
+    // All sources — live iCal fetch
+    var icsSources = [];
+    if (integrations.gradescope && integrations.gradescope.icsUrl) {
+      icsSources.push({ kind:'gradescope', url:integrations.gradescope.icsUrl, tag:null });
+    }
+    if (integrations.canvas && integrations.canvas.icsUrl) {
+      icsSources.push({ kind:'canvas', url:integrations.canvas.icsUrl, tag:null });
+    }
+    (integrations.courseWebs||[]).forEach(function(cw){
+      if (cw.icsUrl) icsSources.push({ kind:'courseweb', url:cw.icsUrl, tag:cw.name });
+    });
+
+    await Promise.all(icsSources.map(async function(s){
+      try {
+        var events = await fetchIcsEvents(s.url);
+        imported = imported.concat(eventsToTasks(events, s.kind, s.tag));
+      } catch(e) {
+        errors.push((s.tag||s.kind) + ': ' + e.message);
+      }
+    }));
+
+    // Dedup within incoming batch (same title + date from multiple feeds)
+    var seen = {};
+    var deduped = [];
+    imported.forEach(function(t){
+      var k = normalizeKey(t.title)+'|'+(t.dueDate||'');
+      if (seen[k]) return;
+      seen[k] = true;
+      deduped.push(t);
+    });
+
+    mergeImported(deduped);
+
+    var now = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    var totalSrc = icsSources.length;
+    var msg = errors.length
+      ? 'Synced with errors: ' + errors.join(' · ')
+      : 'Last sync ' + now + ' · ' + deduped.length + ' event' + (deduped.length===1?'':'s') + ' from ' + totalSrc + ' source' + (totalSrc===1?'':'s');
+    setSyncStatus({ running:false, message:msg, error:errors.length>0 });
+  }
+
+  var overdueCt = tasks.filter(function(t){return !t.completed&&t.dueDate&&t.dueDate<todayISO();}).length;
+  var todayCt   = tasks.filter(function(t){return !t.completed&&t.dueDate===todayISO();}).length;
+  var urgBadge  = overdueCt+todayCt;
+
+  var TITLE = {today:'Today',upcoming:'Upcoming',all:'All Tasks',completed:'Completed',integrations:'Integrations'};
+  var now = new Date();
+  var dateStr = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+  var isDesktop = typeof window !== 'undefined' && window.innerWidth > 768;
+
+  function handleSetView(v) { setView(v); setSelectedId(null); setDayFilter(null); }
+
+  async function handleLogout() {
+    if (window.__FB_AUTH) await window.__FB_AUTH.signOut();
+    setSession(null); setUserId(null);
+  }
+  function handleAuth(user) {
+    setSession(user);
+    if (user) { setUserId(user.uid); loadUserData(window.__FB_DB, user.uid, user); }
+  }
+
+  /* Show loading spinner while Firebase resolves auth state */
+  if (session === undefined || fbConfig === null) {
+    return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',color:'var(--text3)',fontSize:14}}>Loading…</div>;
+  }
+
+  /* Show auth modal when logged out — always, whether Firebase is configured or not */
+  if (session === null) {
+    return <AuthModal onAuth={handleAuth} configured={!!(fbConfig && fbConfig.configured)} />;
+  }
+
+  var userEmail   = session && session.email;
+  var userName    = displayName || (userEmail ? userEmail.split('@')[0] : 'there');
+
+  return (
+    <div className="app-shell">
+      {/* Sidebar — desktop only */}
+      <Sidebar
+        view={view} setView={handleSetView} tasks={tasks} integrations={integrations}
+        displayName={displayName} userEmail={userEmail}
+      />
+
+      {/* Main column */}
+      <div className="main-col">
+        {/* Top header */}
+        <div className="main-hdr">
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:12}}>
+            <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
+              {/* Hamburger — mobile only */}
+              <button
+                className="mob-menu-btn"
+                onClick={function(){setDrawerOpen(true);}}
+                style={{
+                  display:'none',
+                  width:36,height:36,borderRadius:10,
+                  background:'var(--card)',
+                  alignItems:'center',justifyContent:'center',
+                  flexShrink:0,marginTop:3,
+                  boxShadow:'var(--sh)',
+                  color:'var(--text)',
+                }}
+              >
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+                  <rect width="16" height="2" rx="1" fill="currentColor"/>
+                  <rect y="5" width="12" height="2" rx="1" fill="currentColor"/>
+                  <rect y="10" width="8" height="2" rx="1" fill="currentColor"/>
+                </svg>
+              </button>
+              <div>
+                <div className="greeting">
+                  {view==='integrations'?'Integrations':view==='calendar'?'Calendar':view==='completed'?'Completed':view==='settings'?'Settings':greeting()+', '+userName}
+                </div>
+                {view!=='integrations'&&view!=='calendar'&&view!=='completed'&&view!=='settings' && (
+                  <p className="greeting-sub">{dateStr}</p>
+                )}
+              </div>
+            </div>
+            <div style={{display:'flex',gap:6,marginTop:4}}>
+              {view!=='integrations'&&view!=='settings' && (
+                <button
+                  onClick={function(){setSearchOpen(function(o){return !o;});setSearch('');}}
+                  style={{
+                    padding:'8px 10px',borderRadius:12,
+                    background:searchOpen?'var(--navy)':'var(--card)',
+                    color:searchOpen?'#fff':'var(--text2)',
+                    boxShadow:searchOpen?'none':SHADOW||'var(--sh)',
+                    display:'flex',alignItems:'center',transition:'all .14s',
+                  }}
+                >
+                  {ICO.search}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Search bar */}
+          {searchOpen && view!=='integrations' && (
+            <div className="a-fade" style={{
+              display:'flex',alignItems:'center',gap:10,
+              background:'var(--card)',borderRadius:14,
+              padding:'10px 14px',marginBottom:12,boxShadow:'var(--sh)',
+              border:'2px solid var(--navy)',
+            }}>
+              <span style={{color:'var(--text3)',display:'flex'}}>{ICO.search}</span>
+              <input
+                autoFocus value={search}
+                onChange={function(e){setSearch(e.target.value);}}
+                placeholder="Search tasks…"
+                style={{fontSize:14,flex:1}}
+              />
+              {search&&<button onClick={function(){setSearch('');}} style={{color:'var(--text3)',display:'flex'}}>{ICO.close}</button>}
+            </div>
+          )}
+
+          {/* Week strip — task views only */}
+          {view!=='integrations'&&view!=='completed'&&view!=='calendar'&&view!=='settings' && (
+            <div style={{marginBottom:14}}>
+              <WeekStrip tasks={tasks} onDayFilter={setDayFilter} filtered={dayFilter} />
+            </div>
+          )}
+          {(view==='integrations'||view==='completed'||view==='calendar'||view==='settings') && (
+            <div style={{height:14}} />
+          )}
+        </div>
+
+        {/* Scrollable content */}
+        <div className="main-scroll">
+          <div className="view-pad">
+          <div key={view} className="a-view" style={{display:'flex',flexDirection:'column',gap:8}}>
+          {view!=='integrations'&&view!=='calendar'&&view!=='settings' && (
+            <SmartInput onAdd={handleAdd} />
+          )}
+
+          {view==='settings' ? (
+            <SettingsPage
+              user={session}
+              displayName={displayName}
+              onSaveName={saveDisplayName}
+              darkMode={darkMode}
+              onToggleDark={function(){setDarkMode(function(d){return !d;});}}
+              onLogout={handleLogout}
+            />
+          ) : view==='calendar' ? (
+            <CalendarView tasks={tasks} onSelectDay={function(iso){setDayFilter(iso); if(iso) setView('all'); }} />
+          ) : view==='integrations' ? (
+            <IntegrationsPage
+              integrations={integrations}
+              onUpdate={updateInteg}
+              onSync={doSync}
+              syncStatus={syncStatus}
+            />
+          ) : sections.length===0 ? (
+            <div style={{
+              display:'flex',flexDirection:'column',alignItems:'center',
+              justifyContent:'center',paddingTop:60,gap:14,color:'var(--text3)',
+            }}>
+              <div style={{
+                width:64,height:64,borderRadius:20,background:'var(--card)',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                fontSize:28,boxShadow:'var(--sh)',
+              }}>
+                ✓
+              </div>
+              <p style={{fontSize:15,fontWeight:600,color:'var(--text2)'}}>
+                {view==='completed'?'No completed tasks yet':'All clear — add a task above'}
+              </p>
+            </div>
+          ) : (
+            sections.map(function(sec){
+              return (
+                <TaskSection
+                  key={sec.title}
+                  title={sec.title}
+                  tasks={sec.tasks}
+                  selectedId={selectedId}
+                  onToggle={toggleTask}
+                  onSelect={selectTask}
+                />
+              );
+            })
+          )}
+          </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Detail panel — desktop only */}
+      {selectedTask && (
+        <DetailPanel
+          key={selectedTask.id}
+          task={selectedTask}
+          onUpdate={updateTask}
+          onDelete={deleteTask}
+          onClose={function(){setSelectedId(null);}}
+        />
+      )}
+
+      {/* Detail sheet — mobile only */}
+      {selectedTask && (
+        <DetailSheet
+          key={'sheet-'+selectedTask.id}
+          task={selectedTask}
+          onUpdate={updateTask}
+          onDelete={deleteTask}
+          onClose={function(){setSelectedId(null);}}
+        />
+      )}
+
+      {/* FAB — mobile only */}
+      <div
+        className="fab"
+        onClick={function(){setNlp({input:'',parsed:{title:'',dueDate:null,dueTime:null}});}}
+      >
+        {ICO.plus}
+      </div>
+
+      {/* Mobile slide-in drawer */}
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={function(){setDrawerOpen(false);}}
+        view={view}
+        setView={handleSetView}
+        tasks={tasks}
+        displayName={displayName}
+        userEmail={userEmail}
+        urgBadge={urgBadge}
+      />
+
+      {/* NLP modal */}
+      {nlp && (
+        <AddModal
+          input={nlp.input}
+          parsed={nlp.parsed}
+          onConfirm={confirmAdd}
+          onCancel={function(){setNlp(null);}}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ─── MOUNT ──────────────────────────────────────────────── */
+var SHADOW = '0 2px 12px rgba(0,0,0,.06)';
+document.getElementById('loading').style.display = 'none';
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
